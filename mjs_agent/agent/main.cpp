@@ -3,65 +3,15 @@
 #include <ws2tcpip.h>
 #include <iostream>
 #include <string>
+#include <thread>
+#include "types.h"
+#include "network.h"
+#include "command_parser.h"
 
 #pragma comment(lib, "ws2_32.lib")
 
-const char* SERVER_IP = "127.0.0.1";
-const int SERVER_PORT = 8888;
-
-void SendKeyInput(WORD vKey, bool isKeyDown)
-{
-    INPUT input = { 0 }; 
-    input.type = INPUT_KEYBOARD;
-    input.ki.wVk = vKey;
-
-    if (!isKeyDown)
-    {
-        input.ki.dwFlags = KEYEVENTF_KEYUP;
-    }
-
-    SendInput(1, &input, sizeof(INPUT));
-}
-
-void ProcessCommand(const std::string& command)
-{
-    std::cout << "Command received: " << command << std::endl;
-
-    char key = command[0];
-    bool isDown = (command.find("DOWN") != std::string::npos);
-
-    WORD vKey = 0;
-
-    switch (key) {
-        case 'W':
-        case 'w':
-            vKey = 'W';
-            break;
-        case 'A':
-        case 'a':
-            vKey = 'A';
-            break;
-        case 'S':
-        case 's':
-            vKey = 'S';
-            break;
-        case 'D':
-        case 'd':
-            vKey = 'D';
-            break;
-        case 'X':
-        case 'x':
-        case ' ':
-            vKey = VK_SPACE;
-            break;
-        default:
-            std::cout << "Unknown key: " << key << std::endl;
-            return;
-    }
-
-    SendKeyInput(vKey, isDown);
-    std::cout << "Key input:" << key << "\n Action=" << (isDown ? "DOWN" : "UP") << std::endl;
-}
+PlayerState g_playerState;
+std::atomic<bool> g_running(true);
 
 int main()
 {
@@ -71,30 +21,38 @@ int main()
         std::cerr << "WSAStartup error: " << result << std::endl;
         return 1;
     }
-    std::cout << "Socket start" << std::endl;
+    std::cout << "=== MJS Agent Started ===" << std::endl;
+    std::cout << "TCP Command Port: " << SERVER_PORT << std::endl;
+    std::cout << "UDP Game Info Port: " << UDP_PORT << std::endl;
+
+    std::thread udpThread(UdpReceiverThread);
 
     SOCKET clientSocket = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
     if (clientSocket == INVALID_SOCKET) {
         std::cerr << "Socket creation failed: " << WSAGetLastError() << std::endl;
+        g_running = false;
+        udpThread.join();
         WSACleanup();
         return 1;
     }
-    std::cout << "Socket created" << std::endl;
+    std::cout << "TCP socket created" << std::endl;
 
     sockaddr_in serverAddr;
     serverAddr.sin_family = AF_INET;
     serverAddr.sin_port = htons(SERVER_PORT);
     serverAddr.sin_addr.s_addr = inet_addr(SERVER_IP);
 
-    std::cout << "Connecting IP: " << SERVER_IP << "Port :" << SERVER_PORT << std::endl;
+    std::cout << "Connecting to command server: " << SERVER_IP << ":" << SERVER_PORT << std::endl;
     if (connect(clientSocket, (sockaddr*)&serverAddr, sizeof(serverAddr)) == SOCKET_ERROR) {
         std::cerr << "Connect failed: " << WSAGetLastError() << std::endl;
         closesocket(clientSocket);
+        g_running = false;
+        udpThread.join();
         WSACleanup();
         return 1;
     }
 
-    std::cout << "Connected to server" << std::endl;
+    std::cout << "Connected to command server!" << std::endl;
 
     char buffer[1024];
     while (true) {
@@ -119,8 +77,11 @@ int main()
     }
 
     closesocket(clientSocket);
+    
+    g_running = false;
+    udpThread.join();
     WSACleanup();
 
-    std::cout << "Program terminated." << std::endl;
+    std::cout << "=== Program terminated ===" << std::endl;
     return 0;
 }
