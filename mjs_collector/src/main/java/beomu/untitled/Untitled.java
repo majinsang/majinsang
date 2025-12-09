@@ -1,17 +1,17 @@
 package beomu.untitled;
 
-
 import com.mojang.brigadier.Command;
-import com.mojang.brigadier.arguments.StringArgumentType;
 import com.mojang.brigadier.tree.LiteralCommandNode;
 import io.papermc.paper.command.brigadier.CommandSourceStack;
 import io.papermc.paper.command.brigadier.Commands;
 import io.papermc.paper.plugin.lifecycle.event.types.LifecycleEvents;
+import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
-import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
-import org.bukkit.event.server.ServerLoadEvent;
 import org.bukkit.plugin.java.JavaPlugin;
+
+import java.nio.ByteBuffer;
+
 
 public final class Untitled extends JavaPlugin implements Listener {
 
@@ -42,6 +42,26 @@ public final class Untitled extends JavaPlugin implements Listener {
         getLifecycleManager().registerEventHandler(LifecycleEvents.COMMANDS, cmd -> {
             cmd.registrar().register(TestCommand());
         });
+
+        NetworkManager nm = new NetworkManager("127.0.0.1", 8986);
+
+
+
+        Bukkit.getScheduler().runTaskTimerAsynchronously(this, () -> {
+
+            for (Player player : Bukkit.getOnlinePlayers()) {
+                ByteBuffer buf = ByteBuffer.allocate(24);
+
+                buf.putDouble(player.getX());
+                buf.putDouble(player.getY());
+                buf.putDouble(player.getZ());
+
+                buf.flip();
+
+                nm.send(buf);
+            }
+
+        }, 0L, 2L);
     }
 
     @Override
