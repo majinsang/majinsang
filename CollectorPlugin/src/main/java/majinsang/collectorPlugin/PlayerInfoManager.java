@@ -1,4 +1,4 @@
-package beomu.untitled;
+package majinsang.collectorPlugin;
 
 import org.bukkit.Bukkit;
 import org.bukkit.Location;

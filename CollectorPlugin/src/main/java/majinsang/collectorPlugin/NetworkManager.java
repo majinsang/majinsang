@@ -1,4 +1,4 @@
-package beomu.untitled;
+package majinsang.collectorPlugin;
 
 import java.net.DatagramSocket;
 import java.net.DatagramPacket;
@@ -26,11 +26,9 @@ public class NetworkManager implements AutoCloseable {
         }
     }
 
-    
-
     public void send(ByteBuffer data) {
         try {
-            DatagramPacket packet = new DatagramPacket(data.array(), data.position(), serverAddr_, serverPort_);
+            DatagramPacket packet = new DatagramPacket(data.array(), data.remaining(), serverAddr_, serverPort_);
             socket_.send(packet);
         }catch(Exception e) {
             e.printStackTrace();

@@ -1,0 +1,4 @@
+name: CollectorPlugin
+version: '1.0-SNAPSHOT'
+main: majinsang.collectorPlugin.CollectorPlugin
+api-version: '1.21'
