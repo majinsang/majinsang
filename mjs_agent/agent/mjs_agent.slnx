@@ -1,0 +1,7 @@
+<Solution>
+  <Configurations>
+    <Platform Name="x64" />
+    <Platform Name="x86" />
+  </Configurations>
+  <Project Path="mjs_agent/mjs_agent.vcxproj" Id="0eae6cb9-171f-4ded-b0e9-a9bcbff9c1dd" />
+</Solution>
