@@ -27,6 +27,14 @@ int main()
     netManager.UdpStart();
     netManager.TcpStart();
 
+	while (netManager.IsUdpRunning() && netManager.IsTcpRunning()) {
+        Sleep(100);
+    }
+
+	std::cout << "shudown" << std::endl;
+	netManager.TcpStop();
+	netManager.UdpStop();
+
     WSACleanup();
     std::cout << "=== Program terminated ===" << std::endl;
     return 0;

@@ -72,6 +72,8 @@ void NetworkManager::UdpReceiverThread()
             position.x = buffer[0];
             position.y = buffer[1];
             position.z = buffer[2];
+            std::cout << "[UDP] Position: X=" << position.x
+                << " Y=" << position.y << " Z=" << position.z << std::endl;
         }
     }
 
@@ -137,7 +139,7 @@ void NetworkManager::TcpReceiverThread()
         
         if (bytesReceived >= sizeof(double) * 3) {
             std::cout << "target received. \n X:" << buffer[0] << " Y: " << buffer[1] << " Z: " << buffer[2] << std::endl;
-            movement->MoveToPosition(buffer[0], buffer[2], this, 0.2);
+            movement.MoveToPosition(buffer[0], buffer[2], this, 0.2);
             
         }
         else if (bytesReceived == 0) {
