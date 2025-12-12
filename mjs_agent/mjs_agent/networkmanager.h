@@ -35,9 +35,13 @@ private:
     std::thread tcpThread;
     std::atomic<bool> tcpRunning{ false };
 
-    Movement movement;
+    Movement* movement;
+    std::mutex positionMtx;
 
 public:
+    NetworkManager();
+	~NetworkManager();
+
     void UdpStart();
     void UdpStop();
     Position GetPosition();

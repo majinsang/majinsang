@@ -11,7 +11,7 @@ void Movement::MoveToPosition(double targetX, double targetZ, NetworkManager* ne
     // 대각선도 가능 HOW?
     // 그냥 키 누르기? 
     // 3 , 3
-    // -2 , 2
+    // -2 , 2 
     while (networkmanager->IsUdpRunning()) {
         Position currentPosition = networkmanager->GetPosition();
 
@@ -22,7 +22,7 @@ void Movement::MoveToPosition(double targetX, double targetZ, NetworkManager* ne
         if (distance < threshold) {
             if (movingX) {
                 InputManager::SendKeyInput(moveX < 0 ? 'A' : 'D', false);
-                moveX = false;
+                movingX = false;
             }
             if (movingZ) {
                 InputManager::SendKeyInput(moveZ < 0 ? 'W' : 'S', false);
@@ -47,7 +47,7 @@ void Movement::MoveToPosition(double targetX, double targetZ, NetworkManager* ne
         if (!movingZ)
         {
             if (std::abs(moveZ) > threshold) {
-                InputManager::SendKeyInput(moveZ < 0 ? 'A' : 'D', true);
+                InputManager::SendKeyInput(moveZ < 0 ? 'W' : 'S', true);
                 movingZ = true;
             }
             else
