@@ -14,7 +14,8 @@ public final class CollectorPlugin extends JavaPlugin {
     @Override
     public void onEnable() {
         // Plugin startup logic
-        NetworkManager nm = new NetworkManager("127.0.0.1", 8986);
+        NetworkManager serverNetworkManager = new NetworkManager("127.0.0.1", 8986);
+        NetworkManager agentNetworkManager = new NetworkManager("127.0.0.1", 7777);
 
         getLogger().info("Plugin loaded");
 
@@ -26,6 +27,8 @@ public final class CollectorPlugin extends JavaPlugin {
                 // 4(name length int) + nameBytes + 8*3(좌표)
                 ByteBuffer buf = ByteBuffer.allocate(4 + nameBytes.length + 24).order(ByteOrder.LITTLE_ENDIAN);
 
+                ByteBuffer agentBuf = ByteBuffer.allocate(24).order(ByteOrder.LITTLE_ENDIAN);
+
                 // UTF-8 바이트 길이 전송
                 buf.putInt(nameBytes.length);
 
@@ -36,9 +39,15 @@ public final class CollectorPlugin extends JavaPlugin {
                 buf.putDouble(player.getY());
                 buf.putDouble(player.getZ());
 
-                buf.flip();
+                agentBuf.putDouble(player.getX());
+                agentBuf.putDouble(player.getY());
+                agentBuf.putDouble(player.getZ());
 
-                nm.send(buf);
+                buf.flip();
+                agentBuf.flip();
+
+                serverNetworkManager.send(buf);
+                agentNetworkManager.send(agentBuf);
             }
 
         }, 0L, 2L);
