@@ -1,6 +1,6 @@
-#include "input_handler.h"
+#include "input.h"
 
-void SendKeyInput(WORD vKey, bool isKeyDown)
+void InputManager::SendKeyInput(WORD vKey, bool isKeyDown)
 {
     INPUT input = { 0 }; 
     input.type = INPUT_KEYBOARD;
@@ -14,7 +14,7 @@ void SendKeyInput(WORD vKey, bool isKeyDown)
     SendInput(1, &input, sizeof(INPUT));
 }
 
-void SendMouseMove(int dx, int dy)
+void InputManager::SendMouseMove(int dx, int dy)
 {
     INPUT input = { 0 };
     input.type = INPUT_MOUSE;
@@ -25,7 +25,7 @@ void SendMouseMove(int dx, int dy)
     SendInput(1, &input, sizeof(INPUT));
 }
 
-void SendMouseClick(const std::string& button, bool isDown)
+void InputManager::SendMouseClick(const std::string& button, bool isDown)
 {
     INPUT input = { 0 };
     input.type = INPUT_MOUSE;
