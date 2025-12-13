@@ -6,6 +6,7 @@ import org.bukkit.entity.Player;
 
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
+import java.nio.charset.StandardCharsets;
 
 
 public final class CollectorPlugin extends JavaPlugin {
@@ -13,22 +14,23 @@ public final class CollectorPlugin extends JavaPlugin {
     @Override
     public void onEnable() {
         // Plugin startup logic
-        NetworkManager nm = new NetworkManager("127.0.0.1", 7777);
+        NetworkManager nm = new NetworkManager("127.0.0.1", 8986);
 
         getLogger().info("Plugin loaded");
 
         Bukkit.getScheduler().runTaskTimerAsynchronously(this, () -> {
             for (Player player : Bukkit.getOnlinePlayers()) {
-                ByteBuffer buf = ByteBuffer.allocate(24).order(ByteOrder.LITTLE_ENDIAN);
+                String name = player.getName();
+                byte[] nameBytes = name.getBytes(StandardCharsets.UTF_8);
 
-                String test = String.valueOf(player.getX());
-                player.sendMessage(test);
+                // 4(name length int) + nameBytes + 8*3(좌표)
+                ByteBuffer buf = ByteBuffer.allocate(4 + nameBytes.length + 24).order(ByteOrder.LITTLE_ENDIAN);
 
-                test = String.valueOf(player.getY());
-                player.sendMessage(test);
+                // UTF-8 바이트 길이 전송
+                buf.putInt(nameBytes.length);
 
-                test = String.valueOf(player.getZ());
-                player.sendMessage(test);
+                // 현재 position에서 그대로 추가
+                buf.put(nameBytes);
 
                 buf.putDouble(player.getX());
                 buf.putDouble(player.getY());
