@@ -20,18 +20,19 @@ void Movement::MoveToPosition(double targetX, double targetZ, NetworkManager* ne
         double distance = std::sqrt(moveX * moveX + moveZ * moveZ);
 
         if (distance < threshold) {
-            if (movingX) {
-                InputManager::SendKeyInput(moveX < 0 ? 'A' : 'D', false);
-                movingX = false;
-            }
-            if (movingZ) {
-                InputManager::SendKeyInput(moveZ < 0 ? 'W' : 'S', false);
-                movingZ = false;
-            }
             std::cout << "Reached!" << std::endl;
             networkmanager->SendDone();
             break;
         }
+        if (movingX && abs(moveX) < threshold) {
+            InputManager::SendKeyInput(moveX < 0 ? 'A' : 'D', false);
+            movingX = false;
+        }
+        if (movingZ && abs(moveZ) < threshold) {
+            InputManager::SendKeyInput(moveZ < 0 ? 'W' : 'S', false);
+            movingZ = false;
+        }
+
         if (!movingX)
         {
             if (std::abs(moveX) > threshold) {
