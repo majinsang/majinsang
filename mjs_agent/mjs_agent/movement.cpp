@@ -24,11 +24,12 @@ void Movement::MoveToPosition(double targetX, double targetZ, NetworkManager* ne
             networkmanager->SendDone();
             break;
         }
-        if (movingX && abs(moveX) < threshold) {
+
+        if (movingX && moveX < threshold) {
             InputManager::SendKeyInput(moveX < 0 ? 'A' : 'D', false);
             movingX = false;
         }
-        if (movingZ && abs(moveZ) < threshold) {
+        if (movingZ && moveZ < threshold) {
             InputManager::SendKeyInput(moveZ < 0 ? 'W' : 'S', false);
             movingZ = false;
         }
