@@ -152,7 +152,7 @@ void NetworkManager::TcpReceiverThread()
         
         if (bytesReceived >= sizeof(double) * 3) {
             std::cout << "target received. \n X:" << buffer[0] << " Y: " << buffer[1] << " Z: " << buffer[2] << std::endl;
-            movement->MoveToPosition(buffer[0], buffer[2], this, 0.3);
+            movement->MoveToPosition(buffer[0], buffer[2], this, 0.5);
             
         }
         else if (bytesReceived == 0) {
