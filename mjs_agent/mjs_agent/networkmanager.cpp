@@ -171,7 +171,7 @@ void NetworkManager::TcpReceiverThread()
 void NetworkManager::SendDone()
 {
     if (tcpSock != INVALID_SOCKET) {
-        int doneSignal = -1;
+        bool doneSignal = false;
         send(tcpSock, reinterpret_cast<const char*>(&doneSignal),sizeof(doneSignal), 0);
     }
 }
