@@ -173,16 +173,14 @@ void NetworkManager::TcpReceiverThread()
             
 
             if (mode == 1) {
-                if (bytesReceived >= 26) {
-                    char target = buffer[1];
-                    double* coords = reinterpret_cast<double*>(&buffer[2]);
+                if (bytesReceived >= 25) {
+                    double* coords = reinterpret_cast<double*>(&buffer[1]);
                     double x = coords[0];
                     double y = coords[1];
                     double z = coords[2];
                     
-                    std::cout << "Relative target received - Target: " << (int)target 
-                              << " X:" << x << " Y:" << y << " Z:" << z << std::endl;
-                    movement->MoveRelation(target, x, z, this, 0.5);
+                    std::cout << "Relative target received - Target: " << " X:" << x << " Y:" << y << " Z:" << z << std::endl;
+                    movement->MoveRelation(x, y, z, this, 0.5);
                 }
                 else {
                     std::cout << "Invalid mode 1 packet size: " << bytesReceived << std::endl;
