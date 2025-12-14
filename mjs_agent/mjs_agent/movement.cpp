@@ -7,11 +7,12 @@
 
 void Movement::MoveToPosition(double targetX, double targetZ, NetworkManager* networkmanager, double threshold)
 {
-    // 현재 위치 받기 -> 그 위치와 목표 위치 계산 -> 그만큼 이동
-    // 대각선도 가능 HOW?
-    // 그냥 키 누르기? 
-    // 3 , 3
-    // -2 , 2 
+    InputManager::SendKeyInput('W', false);
+    InputManager::SendKeyInput('A', false);
+    InputManager::SendKeyInput('S', false);
+    InputManager::SendKeyInput('D', false);
+    bool movingX = false;
+    bool movingZ = false;
     while (networkmanager->IsUdpRunning()) {
         Position currentPosition = networkmanager->GetPosition();
 
@@ -25,11 +26,11 @@ void Movement::MoveToPosition(double targetX, double targetZ, NetworkManager* ne
             break;
         }
 
-        if (movingX && moveX < threshold) {
+        if (movingX && abs(moveX) < threshold) {
             InputManager::SendKeyInput(moveX < 0 ? 'A' : 'D', false);
             movingX = false;
         }
-        if (movingZ && moveZ < threshold) {
+        if (movingZ && abs(moveZ) < threshold) {
             InputManager::SendKeyInput(moveZ < 0 ? 'W' : 'S', false);
             movingZ = false;
         }

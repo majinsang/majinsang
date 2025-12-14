@@ -49,7 +49,7 @@ void NetworkManager::UdpStop()
 
 Position NetworkManager::GetPosition()
 {
-    std::lock_guard<std::mutex> lock(positionMtx);
+    std::lock_guard<std::mutex> lock(udpMtx);
     return position;
 }
 

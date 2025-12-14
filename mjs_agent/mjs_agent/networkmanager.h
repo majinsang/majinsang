@@ -39,7 +39,7 @@ private:
     std::atomic<bool> tcpRunning{ false };
 
     Movement* movement;
-    std::mutex positionMtx;
+    //std::mutex positionMtx;
 
 public:
     NetworkManager();
