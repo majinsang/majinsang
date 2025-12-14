@@ -19,6 +19,9 @@ constexpr char SERVER_IP[] = "127.0.0.1";
 constexpr int SERVER_PORT = 8888;
 constexpr int UDP_PORT = 7777;
 
+const int MAX_RETRY_ATTEMPTS = 5;
+const int RETRY_DELAY_MS = 5000;
+
 class Movement;
 
 class NetworkManager {

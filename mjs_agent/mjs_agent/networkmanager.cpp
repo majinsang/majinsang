@@ -124,54 +124,67 @@ void NetworkManager::TcpStop()
 
 void NetworkManager::TcpReceiverThread()
 {
-    tcpSock = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
-    if (tcpSock == INVALID_SOCKET) {
-        std::cerr << "Socket creation failed: " << WSAGetLastError() << std::endl;
-        return;
-    }
-    std::cout << "TCP socket created" << std::endl;
-    
-    sockaddr_in serverAddr;
-    serverAddr.sin_family = AF_INET;
-    serverAddr.sin_port = htons(SERVER_PORT);
-    serverAddr.sin_addr.s_addr = inet_addr(SERVER_IP);
+    while (tcpRunning) {
 
-    std::cout << "Connecting to command server: " << SERVER_IP << ":" << SERVER_PORT << std::endl;
-    if (connect(tcpSock, (sockaddr*)&serverAddr, sizeof(serverAddr)) == SOCKET_ERROR) {
-        std::cerr << "Connect failed: " << WSAGetLastError() << std::endl;
+        tcpSock = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
+        if (tcpSock == INVALID_SOCKET) {
+            std::cerr << "Socket creation failed: " << WSAGetLastError() << std::endl;
+            std::this_thread::sleep_for(std::chrono::milliseconds(RETRY_DELAY_MS));
+            continue;
+        }
+        std::cout << "TCP socket created" << std::endl;
+
+        sockaddr_in serverAddr;
+        serverAddr.sin_family = AF_INET;
+        serverAddr.sin_port = htons(SERVER_PORT);
+        serverAddr.sin_addr.s_addr = inet_addr(SERVER_IP);
+
+        std::cout << "Connecting to command server: " << SERVER_IP << ":" << SERVER_PORT << std::endl;
+        if (connect(tcpSock, (sockaddr*)&serverAddr, sizeof(serverAddr)) == SOCKET_ERROR) {
+            std::cerr << "Connect failed: " << WSAGetLastError() << std::endl;
+            closesocket(tcpSock);
+            tcpSock = INVALID_SOCKET;
+            std::cout << "Retrying in " << RETRY_DELAY_MS / 1000 << " seconds" << std::endl;
+            std::this_thread::sleep_for(std::chrono::milliseconds(RETRY_DELAY_MS));
+            continue;
+        }
+        std::cout << "Connected to command server!" << std::endl;
+
+        double buffer[128];
+
+        while (tcpRunning) {
+            int bytesReceived = recv(tcpSock, reinterpret_cast<char*>(buffer), sizeof(buffer), 0);
+
+            if (bytesReceived >= sizeof(double) * 3) {
+                std::cout << "target received. \n X:" << buffer[0] << " Y: " << buffer[1] << " Z: " << buffer[2] << std::endl;
+                movement->MoveToPosition(buffer[0], buffer[2], this, 0.5);
+
+            }
+            else if (bytesReceived == 0) {
+                std::cout << "Server disconnected." << std::endl;
+                break;
+            }
+            else if (bytesReceived == SOCKET_ERROR) {
+                std::cerr << "TCP Recv failed: " << WSAGetLastError() << std::endl;
+                break;
+            }
+        }
         closesocket(tcpSock);
         tcpSock = INVALID_SOCKET;
-        return;
-    }
-    std::cout << "Connected to command server!" << std::endl;
-
-    double buffer[128];
-    
-    while (tcpRunning) {
-        int bytesReceived = recv(tcpSock, reinterpret_cast<char*>(buffer), sizeof(buffer), 0);
         
-        if (bytesReceived >= sizeof(double) * 3) {
-            std::cout << "target received. \n X:" << buffer[0] << " Y: " << buffer[1] << " Z: " << buffer[2] << std::endl;
-            movement->MoveToPosition(buffer[0], buffer[2], this, 0.5);
-            
-        }
-        else if (bytesReceived == 0) {
-            std::cout << "Server disconnected." << std::endl;
+        if (!tcpRunning) {
             break;
         }
-        else if (bytesReceived == SOCKET_ERROR) {
-            std::cerr << "TCP Recv failed: " << WSAGetLastError() << std::endl;
-            break;
-        }
+        
+        std::cout << "Attempting to reconnect..." << std::endl;
+        std::this_thread::sleep_for(std::chrono::milliseconds(RETRY_DELAY_MS));
     }
-    closesocket(tcpSock);
-    tcpSock = INVALID_SOCKET;
 }
 
 void NetworkManager::SendDone()
 {
     if (tcpSock != INVALID_SOCKET) {
-        bool doneSignal = false;
+        bool doneSignal = true;
         send(tcpSock, reinterpret_cast<const char*>(&doneSignal),sizeof(doneSignal), 0);
     }
 }
