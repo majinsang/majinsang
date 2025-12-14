@@ -1,5 +1,6 @@
 package majinsang.collectorPlugin;
 
+import org.bukkit.Location;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
@@ -46,11 +47,23 @@ public final class CollectorPlugin extends JavaPlugin {
                 buf.flip();
                 agentBuf.flip();
 
-                serverNetworkManager.send(buf);
-                agentNetworkManager.send(agentBuf);
+                serverNetworkManager.SendUdpPosition(buf);
+                agentNetworkManager.SendUdpPosition(agentBuf);
             }
-
         }, 0L, 2L);
+
+        serverNetworkManager.TcpClientInit("localhost", 18986);
+
+        serverNetworkManager.setPositionListener(pos -> {
+            Bukkit.getScheduler().runTask(this, () -> {
+                for(Player p : Bukkit.getOnlinePlayers()) {
+                    p.teleport(new Location(p.getWorld(), pos.x(), pos.y(), pos.z()));
+                }
+            });
+
+        });
+
+        serverNetworkManager.start();
     }
 
     @Override
