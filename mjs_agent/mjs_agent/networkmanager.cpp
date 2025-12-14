@@ -150,17 +150,12 @@ void NetworkManager::TcpReceiverThread()
         }
         std::cout << "Connected to command server!" << std::endl;
 
-        double buffer[128];
+        char buffer[128];
 
         while (tcpRunning) {
-            int bytesReceived = recv(tcpSock, reinterpret_cast<char*>(buffer), sizeof(buffer), 0);
-
-            if (bytesReceived >= sizeof(double) * 3) {
-                std::cout << "target received. \n X:" << buffer[0] << " Y: " << buffer[1] << " Z: " << buffer[2] << std::endl;
-                movement->MoveToPosition(buffer[0], buffer[2], this, 0.5);
-
-            }
-            else if (bytesReceived == 0) {
+            int bytesReceived = recv(tcpSock, buffer, sizeof(buffer), 0);
+            
+            if (bytesReceived == 0) {
                 std::cout << "Server disconnected." << std::endl;
                 break;
             }
@@ -168,7 +163,50 @@ void NetworkManager::TcpReceiverThread()
                 std::cerr << "TCP Recv failed: " << WSAGetLastError() << std::endl;
                 break;
             }
+            
+            if (bytesReceived < 2) {
+                std::cout << "Invalid packet size: " << bytesReceived << std::endl;
+                continue;
+            }
+
+            char mode = buffer[0];
+            
+
+            if (mode == 1) {
+                if (bytesReceived >= 26) {
+                    char target = buffer[1];
+                    double* coords = reinterpret_cast<double*>(&buffer[2]);
+                    double x = coords[0];
+                    double y = coords[1];
+                    double z = coords[2];
+                    
+                    std::cout << "Relative target received - Target: " << (int)target 
+                              << " X:" << x << " Y:" << y << " Z:" << z << std::endl;
+                    movement->MoveRelation(target, x, z, this, 0.5);
+                }
+                else {
+                    std::cout << "Invalid mode 1 packet size: " << bytesReceived << std::endl;
+                }
+            }
+            else if (mode == 2) {
+                if (bytesReceived >= 25) {
+                    double* coords = reinterpret_cast<double*>(&buffer[1]);
+                    double x = coords[0];
+                    double y = coords[1];
+                    double z = coords[2];
+                    
+                    std::cout << "Absolute target received - X:" << x << " Y:" << y << " Z:" << z << std::endl;
+                    movement->MoveToPosition(x, z, this, 0.5);
+                }
+                else {
+                    std::cout << "Invalid mode 2 packet size: " << bytesReceived << std::endl;
+                }
+            }
+            else {
+                std::cout << "Invalid mode: " << (int)mode << std::endl;
+            }
         }
+        
         closesocket(tcpSock);
         tcpSock = INVALID_SOCKET;
         
