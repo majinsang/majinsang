@@ -60,7 +60,7 @@ class MinecraftEnv(gym.Env):
         return np.array([playerPosition.position_.x_, playerPosition.position_.y_, playerPosition.position_.z_], dtype=np.float32)
     
     def GetTargetPosition(self):
-        return np.array([10.0, -60.0, 10.0], dtype=np.float32)
+        return np.array([-24.0, -60.0, 37.0], dtype=np.float32)
     
     def SendAction(self, action):
         step = 1.0

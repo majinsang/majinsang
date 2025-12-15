@@ -1,2 +1,8 @@
 */.idea/*
 */target/*
+*/__pycache__/*
+*/.idea/*
+*/target/*
+*/__pycache__/*
+*/model/*
+!*/model/.gitkeep
