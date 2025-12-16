@@ -8,7 +8,7 @@ class MinecraftBrain(nn.Module):
     def __init__(self):
         super(MinecraftBrain, self).__init__()
         self.network = nn.Sequential(
-            nn.Linear(5, 128),
+            nn.Linear(6, 128),
             nn.ReLU(),
             nn.Dropout(0.2),
             nn.Linear(128, 128),
@@ -16,7 +16,7 @@ class MinecraftBrain(nn.Module):
             nn.Dropout(0.2),
             nn.Linear(128, 64),
             nn.ReLU(),
-            nn.Linear(64, 5) 
+            nn.Linear(64, 7) 
         )
 
     def forward(self, x):
@@ -32,7 +32,7 @@ def train():
 
     df = df.sample(frac=1).reset_index(drop=True)
 
-    X = df[['log', 'planks', 'stick', 'has_pickaxe', 'near_tree']].values
+    X = df[['log', 'planks', 'stick', 'has_pickaxe', 'near_tree', 'has_crafting_table']].values
     y = df['action_label'].values
 
     train_size = int(len(df) * 0.8)
