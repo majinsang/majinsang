@@ -1,8 +1,12 @@
-#include "input.h"
+#include "pch.h"
 
-void InputManager::SendKeyInput(WORD vKey, bool isKeyDown)
-{
+#include "InputManager.h"
+
+using namespace std;
+
+void InputManager::SendKeyInput(WORD vKey, bool isKeyDown) {
     INPUT input = { 0 }; 
+
     input.type = INPUT_KEYBOARD;
     input.ki.wVk = vKey;
 
@@ -10,13 +14,13 @@ void InputManager::SendKeyInput(WORD vKey, bool isKeyDown)
     {
         input.ki.dwFlags = KEYEVENTF_KEYUP;
     }
-
     SendInput(1, &input, sizeof(INPUT));
 }
 
-void InputManager::SendMouseMove(int dx, int dy)
-{
+
+void InputManager::SendMouseMove(int dx, int dy) {
     INPUT input = { 0 };
+
     input.type = INPUT_MOUSE;
     input.mi.dx = dx;
     input.mi.dy = dy;
@@ -25,8 +29,7 @@ void InputManager::SendMouseMove(int dx, int dy)
     SendInput(1, &input, sizeof(INPUT));
 }
 
-void InputManager::SendMouseClick(const std::string& button, bool isDown)
-{
+void InputManager::SendMouseClick(const std::string& button, bool isDown) {
     INPUT input = { 0 };
     input.type = INPUT_MOUSE;
     
