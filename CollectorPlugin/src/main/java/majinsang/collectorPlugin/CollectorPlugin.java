@@ -52,16 +52,15 @@ public final class CollectorPlugin extends JavaPlugin {
             }
         }, 0L, 2L);
 
-        serverNetworkManager.TcpClientInit("localhost", 18986);
-
-        serverNetworkManager.setPositionListener(pos -> {
-            Bukkit.getScheduler().runTask(this, () -> {
-                for(Player p : Bukkit.getOnlinePlayers()) {
-                    p.teleport(new Location(p.getWorld(), pos.x(), pos.y(), pos.z()));
-                }
-            });
-
-        });
+//        serverNetworkManager.TcpClientInit("localhost", 18986);
+//
+//        serverNetworkManager.setPositionListener(pos -> {
+//            Bukkit.getScheduler().runTask(this, () -> {
+//                for(Player p : Bukkit.getOnlinePlayers()) {
+//                    p.teleport(new Location(p.getWorld(), pos.x(), pos.y(), pos.z()));
+//                }
+//            });
+//        });
 
         serverNetworkManager.start();
     }

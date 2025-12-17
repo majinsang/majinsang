@@ -6,9 +6,12 @@ from NetworkManager import NetworkManager
 
 class MinecraftEnv(gym.Env):
     networkManager_ : NetworkManager = None
+    targetPos_ : np.ndarray = None
 
-    def __init__(self):
+    def __init__(self, targetPos):
         super().__init__()
+
+        self.SetTargetPosition(*targetPos)
 
         self.observation_space = spaces.Box(low=-1000, high=1000, shape=(3,), dtype=np.float32)
         self.action_space = spaces.Discrete(4)
@@ -16,13 +19,13 @@ class MinecraftEnv(gym.Env):
 
         self.networkManager_ = NetworkManager('localhost')
         self.networkManager_.UdpServerOpen(8986)
-        self.networkManager_.TcpServerOpen('localhost', 18986)
+        self.networkManager_.TcpServerOpen('localhost', 8888)
         self.networkManager_.AcceptConnection()
     
     def reset(self, seed=None, options=None):
         super().reset(seed=seed)
 
-        self.networkManager_.SendTargetPosition(0.0, -60.0, 0.0)
+        self.networkManager_.SendTargetPosition(NetworkManager.POSITION_TYPE.ABSOLUTE, 0.0, -60.0, 0.0)
 
         self.agentPos_ = self.GetPlayerPosition()
         self.targetPos_ = self.GetTargetPosition()
@@ -54,13 +57,16 @@ class MinecraftEnv(gym.Env):
 
         return obs, reward, terminated, False, {}
     
+    def SetTargetPosition(self, x, y, z):
+        self.targetPos_ = np.array([x, y, z], dtype=np.float32)
+
     def GetPlayerPosition(self):
         playerPosition = self.networkManager_.GetPlayerPosition()
 
         return np.array([playerPosition.position_.x_, playerPosition.position_.y_, playerPosition.position_.z_], dtype=np.float32)
     
     def GetTargetPosition(self):
-        return np.array([-24.0, -60.0, 37.0], dtype=np.float32)
+        return self.targetPos_
     
     def SendAction(self, action):
         step = 1.0
@@ -75,5 +81,5 @@ class MinecraftEnv(gym.Env):
         elif action == 3: # Move right
             x += step
 
-        self.networkManager_.SendTargetPosition(x, y, z)
+        self.networkManager_.SendTargetPosition(NetworkManager.POSITION_TYPE.ABSOLUTE, x, y, z)
 
