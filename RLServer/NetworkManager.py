@@ -1,13 +1,36 @@
+import enum
+from dataclasses import dataclass
 import socket
 import struct
 
 from PlayerInformationCollector import PlayerInformation
 from PlayerInformationCollector import Position
-import threading
 
 class NetworkManager:
     RECV_DATA_BYTES = 1024
     BOOL = 1
+
+    class POSITION_TYPE(enum.Enum):
+        NONE = 0,
+        RELATIVE = 1,
+        ABSOLUTE = 2
+
+    @dataclass
+    class POSITION_INFORMATION:
+        type_ : "NetworkManager.POSITION_TYPE"
+        x_: float
+        y_: float
+        z_: float
+
+        def ToBytes(self):
+            return struct.pack(
+                '<b d d d',
+                self.type_.value,
+                self.x_,
+                self.y_,
+                self.z_
+            )
+
 
     def __init__(self, host):
         self.host_ = host
@@ -33,20 +56,19 @@ class NetworkManager:
         self.agentTcpSocket_.bind((host, port))
         self.agentTcpSocket_.listen(1)
 
-    def __SendTargetPosition(self, x: float, y: float, z: float):
-        data = struct.pack('!ddd', x, y, z)
-        self.addr_[0].sendall(data)
-        
-        res : bool = self.addr_[0].recv(self.BOOL)
-
-        return res
-
+    def __MakePositionInformation(self, type : "NetworkManager.POSITION_TYPE", x: float, y: float, z: float) -> POSITION_INFORMATION:
+        pi = NetworkManager.POSITION_INFORMATION(type, x, y, z)
+        return pi
         
     def AcceptConnection(self):
         self.addr_ = self.agentTcpSocket_.accept()
 
-    def SendTargetPosition(self, x: float, y: float, z: float):
-        self.__SendTargetPosition(x,y,z)
+    def SendTargetPosition(self, type : "NetworkManager.POSITION_TYPE", x: float, y: float, z: float):
+        targetPositionInformation = self.__MakePositionInformation(type, x, y, z)
+
+        self.addr_[0].sendall(targetPositionInformation.ToBytes())
+        res : bool = self.addr_[0].recv(self.BOOL)
+        print(f'SendTargetPosition Ack: {bool(struct.unpack("b", res)[0])}')
 
     def GetPlayerPosition(self) -> PlayerInformation:
         self.udpSocket_.setblocking(False)
@@ -73,7 +95,7 @@ class NetworkManager:
 if __name__ == "__main__":
     nm = NetworkManager('localhost')
     nm.UdpServerOpen(8986)
-    nm.TcpServerOpen('localhost', 18986)
+    nm.TcpServerOpen('localhost', 8888)
     nm.AcceptConnection()
 
     import time
@@ -88,7 +110,7 @@ if __name__ == "__main__":
         y = float(input("Enter y: "))
         z = float(input("Enter z: "))
 
-        time.sleep(1)
+        time.sleep(3)
 
-        nm.SendTargetPosition(x, y, z)
+        nm.SendTargetPosition(NetworkManager.POSITION_TYPE.ABSOLUTE, x, y, z)
 

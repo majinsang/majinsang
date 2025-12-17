@@ -4,7 +4,7 @@ from stable_baselines3.common.monitor import Monitor
 from MinecraftEnv import MinecraftEnv
 
 def make_env():
-    env = MinecraftEnv()
+    env = MinecraftEnv((24.0, -60.0, -35.0))
     env = Monitor(env)
     return env
 

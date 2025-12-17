@@ -6,7 +6,7 @@ from MinecraftEnv import MinecraftEnv
 
 
 def make_env():
-    env = MinecraftEnv()
+    env = MinecraftEnv((10.0, -60.0, 10.0))
     env = Monitor(env)
     return env
 
@@ -29,7 +29,7 @@ if __name__ == "__main__":
     )
 
     print("🚀 Training start")
-    model.learn(total_timesteps=200_000)
+    model.learn(total_timesteps=100)
 
     model.save("minecraft_dxdy_dz_ppo")
     print("✅ Model saved")

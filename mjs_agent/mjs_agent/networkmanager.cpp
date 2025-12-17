@@ -172,7 +172,7 @@ void NetworkManager::TcpReceiverThread()
             char mode = buffer[0];
             
 
-            if (mode == 1) {
+            if (mode == Position::RELATION) {
                 if (bytesReceived >= 25) {
                     double* coords = reinterpret_cast<double*>(&buffer[1]);
                     double x = coords[0];
@@ -180,21 +180,27 @@ void NetworkManager::TcpReceiverThread()
                     double z = coords[2];
                     
                     std::cout << "Relative target received - Target: " << " X:" << x << " Y:" << y << " Z:" << z << std::endl;
-                    movement->MoveRelation(x, y, z, this, 0.5);
+                    movement->MoveRelation(x, y, z, this, 0.4);
                 }
                 else {
                     std::cout << "Invalid mode 1 packet size: " << bytesReceived << std::endl;
                 }
             }
-            else if (mode == 2) {
+            else if (mode == Position::ABSOULUTE) {
                 if (bytesReceived >= 25) {
                     double* coords = reinterpret_cast<double*>(&buffer[1]);
                     double x = coords[0];
                     double y = coords[1];
                     double z = coords[2];
                     
-                    std::cout << "Absolute target received - X:" << x << " Y:" << y << " Z:" << z << std::endl;
+                    /*std::cout << "Absolute target received - X:" << x << " Y:" << y << " Z:" << z << std::endl;*/
+                    if ((this->GetPosition() == Position(x, y, z)) && (x == 0 && y == 0)) {
+                        SendDone();
+                        continue;
+                    }
+                    /*if (this->GetPosition() != Position(x, y, z)) */
                     movement->MoveToPosition(x, z, this, 0.5);
+                    /*else this->SendDone();*/
                 }
                 else {
                     std::cout << "Invalid mode 2 packet size: " << bytesReceived << std::endl;
@@ -222,5 +228,7 @@ void NetworkManager::SendDone()
     if (tcpSock != INVALID_SOCKET) {
         bool doneSignal = true;
         send(tcpSock, reinterpret_cast<const char*>(&doneSignal),sizeof(doneSignal), 0);
+
+        /*std::cout << "doneSignal Done" << std::endl;*/
     }
 }
