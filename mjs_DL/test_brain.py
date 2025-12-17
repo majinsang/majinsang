@@ -5,7 +5,7 @@ class MinecraftBrain(nn.Module):
     def __init__(self):
         super(MinecraftBrain, self).__init__()
         self.network = nn.Sequential(
-            nn.Linear(5, 128),
+            nn.Linear(6, 128),
             nn.ReLU(),
             nn.Dropout(0.2),
             nn.Linear(128, 128),
@@ -13,7 +13,7 @@ class MinecraftBrain(nn.Module):
             nn.Dropout(0.2),
             nn.Linear(128, 64),
             nn.ReLU(),
-            nn.Linear(64, 5) 
+            nn.Linear(64, 7) 
         )
 
     def forward(self, x):
@@ -24,7 +24,9 @@ ACTION_MAP = {
     1: "나무 캐기 (MINE_LOG)", 
     2: "판자 만들기 (CRAFT_PLANKS)", 
     3: "막대기 만들기 (CRAFT_STICK)", 
-    4: "곡괭이 만들기 (CRAFT_PICKAXE)"
+    4: "곡괭이 만들기 (CRAFT_PICKAXE)",
+    5: "나무 찾기 (FIND_TREE)",
+    6: "작업대 만들기 (CRAFT_CRAFTING_TABLE)"
 }
 
 def load_model():
@@ -49,7 +51,7 @@ def run_inference():
         print("현재 인벤토리와 상황을 입력해주세요.")
         
         try:
-            input_str = input("입력 > [원목, 판자, 막대기, 곡괭이(0/1), 나무근처(0/1)] (예: 0 5 0 0 1) : ")
+            input_str = input("입력 > [원목, 판자, 막대기, 곡괭이(0/1), 나무근처(0/1), 작업대(0/1)] (예: 0 5 0 0 1 0) : ")
             
             if input_str.lower() == 'q':
                 print("테스트를 종료합니다.")
@@ -57,8 +59,8 @@ def run_inference():
             
             inputs = list(map(float, input_str.split()))
             
-            if len(inputs) != 5:
-                print("⚠️ 경고: 5개의 숫자를 띄어쓰기로 구분해서 입력해주세요.")
+            if len(inputs) != 6:
+                print("⚠️ 경고: 6개의 숫자를 띄어쓰기로 구분해서 입력해주세요.")
                 continue
 
             input_tensor = torch.FloatTensor([inputs])
@@ -74,13 +76,13 @@ def run_inference():
             print(f"📊 확신도: {confidence:.2f}%")
             
             print(f"\n📋 각 행동별 상세 점수:")
-            print(f"{'행동':<25} {'로짓(점수)':<12} {'확률':<10}")
-            print("-" * 50)
-            for idx in range(5):
+            print(f"{'행동':<35} {'로짓(점수)':<12} {'확률':<10}")
+            print("-" * 60)
+            for idx in range(7):
                 score = output[0][idx].item()
                 prob = probs[0][idx].item() * 100
                 marker = "👉 " if idx == predicted_idx else "   "
-                print(f"{marker}{ACTION_MAP[idx]:<23} {score:>8.4f}    {prob:>6.2f}%")
+                print(f"{marker}{ACTION_MAP[idx]:<33} {score:>8.4f}    {prob:>6.2f}%")
 
         except ValueError:
             print("⚠️ 숫자만 입력해주세요.")
