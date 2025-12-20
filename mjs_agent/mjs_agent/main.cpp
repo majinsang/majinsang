@@ -1,41 +1,46 @@
-#define WIN32_LEAN_AND_MEAN
-#define _WINSOCK_DEPRECATED_NO_WARNINGS
-#include <windows.h>
-#include <winsock2.h>
-#include <ws2tcpip.h>
-#include <iostream>
-#include <string>
-#include "networkmanager.h"
+#include "pch.h"
 
+#include "NetworkManager.h"
+#include "PlayerManager.h"
 
-#pragma comment(lib, "ws2_32.lib")
+#include "util.hpp"
 
-int main()
-{
-    WSADATA wsaData;
-    int result = WSAStartup(MAKEWORD(2, 2), &wsaData);
-    if (result != 0) {
-        std::cerr << "WSAStartup error: " << result << std::endl;
-        return 1;
-    }
+using namespace std;
 
-    std::cout << "=== MJS Agent Started ===" << std::endl;
-    std::cout << "TCP Command Port: " << SERVER_PORT << std::endl;
-    std::cout << "UDP Game Info Port: " << UDP_PORT << std::endl;
+void banner();
+void init();
 
-    NetworkManager netManager;
-    netManager.UdpStart();
-    netManager.TcpStart();
+int main(int argc, char* argv[]) {
+	init();
 
-	while (netManager.IsUdpRunning() && netManager.IsTcpRunning()) {
-        Sleep(100);
-    }
+	try {
+		PlayerManager pm("1.21.8");
+		NetworkManager nm(&pm);
 
-	std::cout << "shudown" << std::endl;
-	netManager.TcpStop();
-	netManager.UdpStop();
+		while (1) {
+			nm.RecvCommands();
+			nm.GetBuffer();
+		}
+	
+	}catch(const exception& e) {
+		cerr << "Exception: " << e.what() << endl;
+	}
 
-    WSACleanup();
-    std::cout << "=== Program terminated ===" << std::endl;
-    return 0;
+	WSACleanup();
+}
+
+void banner() {
+	cout << "MJS_AGENT v0.1" << endl;
+}
+
+void init() {
+	WSADATA wsaData;
+
+	int result = WSAStartup(MAKEWORD(2, 2), &wsaData);
+	if (result != 0) {
+		std::cerr << "WSAStartup error: " << result << std::endl;
+		exit(1);
+	}
+
+	banner();
 }

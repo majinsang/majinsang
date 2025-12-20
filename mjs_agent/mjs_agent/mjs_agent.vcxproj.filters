@@ -15,27 +15,36 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="input.cpp">
+    <ClCompile Include="InputManager.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
     <ClCompile Include="main.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
-    <ClCompile Include="movement.cpp">
+    <ClCompile Include="PlayerManager.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
-    <ClCompile Include="networkmanager.cpp">
+    <ClCompile Include="NetworkManager.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
+    <ClCompile Include="pch.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="movement.h">
+    <ClInclude Include="PlayerManager.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
-    <ClInclude Include="input.h">
+    <ClInclude Include="InputManager.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
-    <ClInclude Include="networkmanager.h">
+    <ClInclude Include="NetworkManager.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="pch.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="common.hpp">
       <Filter>헤더 파일</Filter>
     </ClInclude>
   </ItemGroup>

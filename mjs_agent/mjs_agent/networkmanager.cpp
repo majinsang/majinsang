@@ -1,64 +1,42 @@
-#include "networkmanager.h"
-#include "movement.h"
-#include <iostream>
+#include "pch.h"
 
+#include "NetworkManager.h"
 
-NetworkManager::NetworkManager()
-{
-	movement = new Movement();
-}
+using namespace std;
 
-NetworkManager::~NetworkManager()
-{
-    UdpStop();
-    TcpStop();
-    delete movement;
-}
+NetworkManager::NetworkManager(PlayerManagerPtr pm) {
+    udpSocket_ = INVALID_SOCKET;
+    tcpSocket_ = INVALID_SOCKET;
 
-void NetworkManager::UdpStart()
-{
-    if (udpRunning) {
-        std::cout << "UDP receiver already running" << std::endl;
-        return;
+    playerManager_ = pm;
+
+    tcpBuffer_.resize(BUFFER_SIZE);
+
+    if (!init()) {
+        cleanup();
+
+        throw runtime_error("Failed to initialize NetworkManager");
     }
-
-    udpRunning = true;
-    udpThread = std::thread(&NetworkManager::UdpReceiverThread, this);
-    std::cout << "UDP receiver started" << std::endl;
 }
 
-void NetworkManager::UdpStop()
-{
-    if (!udpRunning) {
-        return;
-    }
-
-    udpRunning = false;
-    
-    if (udpThread.joinable()) {
-        udpThread.join();
-    }
-    
-    if (udpSock != INVALID_SOCKET) {
-        closesocket(udpSock);
-        udpSock = INVALID_SOCKET;
-    }
-    
-    std::cout << "UDP receiver stopped" << std::endl;
+NetworkManager::~NetworkManager() {
+    cleanup();
 }
 
-Position NetworkManager::GetPosition()
-{
-    std::lock_guard<std::mutex> lock(udpMtx);
-    return position;
+void NetworkManager::cleanup() {
+    closesocket(udpSocket_);
+    closesocket(tcpSocket_);
+
+    if (udpThread_.joinable()) {
+        udpThread_.join();
+    }
 }
 
-void NetworkManager::UdpReceiverThread()
-{
-    udpSock = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
-    if (udpSock == INVALID_SOCKET) {
-        std::cerr << "UDP socket creation failed: " << WSAGetLastError() << std::endl;
-        return;
+bool NetworkManager::init() {
+    udpSocket_ = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
+    if (udpSocket_ == INVALID_SOCKET) {
+        cerr << "UDP socket creation failed: " << WSAGetLastError() << endl;
+        return false;
     }
 
     sockaddr_in udpAddr;
@@ -66,169 +44,78 @@ void NetworkManager::UdpReceiverThread()
     udpAddr.sin_port = htons(UDP_PORT);
     udpAddr.sin_addr.s_addr = INADDR_ANY;
 
-    if (bind(udpSock, (sockaddr*)&udpAddr, sizeof(udpAddr)) == SOCKET_ERROR) {
-        std::cerr << "UDP bind failed: " << WSAGetLastError() << std::endl;
-        closesocket(udpSock);
-        udpSock = INVALID_SOCKET;
-        return;
+    if (bind(udpSocket_, (sockaddr*)&udpAddr, sizeof(udpAddr)) == SOCKET_ERROR) {
+        cerr << "UDP bind failed: " << WSAGetLastError() << endl;
+        closesocket(udpSocket_);
+        udpSocket_ = INVALID_SOCKET;
+        return false;
     }
 
-    std::cout << "UDP receiver listening on port " << UDP_PORT << std::endl;
+    udpThread_ = std::thread(&NetworkManager::RecvCurrentPlayerInformation, this);
 
-    double buffer[128];
-
-    while (udpRunning) {
-        int bytesReceived = recvfrom(udpSock, reinterpret_cast<char*>(buffer), sizeof(buffer), 0, NULL, NULL);
-        
-        if (bytesReceived >= sizeof(double) * 3) {
-            std::lock_guard<std::mutex> lock(udpMtx);
-            position.x = buffer[0];
-            position.y = buffer[1];
-            position.z = buffer[2];
-            //std::cout << "[UDP] Position: X=" << position.x
-            //    << " Y=" << position.y << " Z=" << position.z << std::endl;
-        }
+    tcpSocket_ = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
+    if (tcpSocket_ == INVALID_SOCKET) {
+        cerr << "Socket creation failed: " << WSAGetLastError() << endl;
+        return false;
     }
 
-    closesocket(udpSock);
-    udpSock = INVALID_SOCKET;
-}
+    sockaddr_in serverAddr;
+    serverAddr.sin_family = AF_INET;
+    serverAddr.sin_port = htons(SERVER_PORT);
+    serverAddr.sin_addr.s_addr = ADDR_ANY;
 
-void NetworkManager::TcpStart()
-{
-    if (tcpRunning) {
-        std::cout << "TCP receiver already running" << std::endl;
-        return;
-    }
-
-    tcpRunning = true;
-    tcpThread = std::thread(&NetworkManager::TcpReceiverThread, this);
-    std::cout << "TCP receiver started" << std::endl;
-}
-
-void NetworkManager::TcpStop()
-{
-    if (!tcpRunning) {
-        return;
-    }
-    tcpRunning = false;
-    if (tcpThread.joinable()) {
-        tcpThread.join();
-    }
-    if (tcpSock != INVALID_SOCKET) {
-        closesocket(tcpSock);
-        tcpSock = INVALID_SOCKET;
-        std::cout << "Tcp socket closed" << std::endl;
+    if (connect(tcpSocket_, (sockaddr*)&serverAddr, sizeof(serverAddr)) == SOCKET_ERROR) {
+        cerr << "Connect failed: " << WSAGetLastError() << endl;
+        return false;
     }
 }
 
-void NetworkManager::TcpReceiverThread()
-{
-    while (tcpRunning) {
+void NetworkManager::UdpBufferClear() {
+    u_long bytesAvailable = 0;
+    ioctlsocket(udpSocket_, FIONREAD, &bytesAvailable);
+    while (bytesAvailable > 0) {
+        char discardBuffer[sizeof(Position)];
+        recvfrom(udpSocket_, discardBuffer, sizeof(discardBuffer), 0, NULL, NULL);
+        ioctlsocket(udpSocket_, FIONREAD, &bytesAvailable);
+	}
+}
 
-        tcpSock = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
-        if (tcpSock == INVALID_SOCKET) {
-            std::cerr << "Socket creation failed: " << WSAGetLastError() << std::endl;
-            std::this_thread::sleep_for(std::chrono::milliseconds(RETRY_DELAY_MS));
-            continue;
+void NetworkManager::Signal() {
+    send(tcpSocket_, reinterpret_cast<const char*>(&SUCCESS_SIGNAL), sizeof(SUCCESS_SIGNAL), 0);
+}
+
+void NetworkManager::RecvCurrentPlayerInformation() {
+    while(1) {
+        UdpBufferClear();
+
+        PlayerInformation pi{};
+
+        int bytesReceived = recvfrom(udpSocket_, reinterpret_cast<char*>(&pi), sizeof(PlayerInformation), 0, NULL, NULL);
+
+        if (bytesReceived == SOCKET_ERROR) { 
+            cerr << "UDP RecvFrom failed: " << WSAGetLastError() << endl; 
+            return;
         }
-        std::cout << "TCP socket created" << std::endl;
 
-        sockaddr_in serverAddr;
-        serverAddr.sin_family = AF_INET;
-        serverAddr.sin_port = htons(SERVER_PORT);
-        serverAddr.sin_addr.s_addr = inet_addr(SERVER_IP);
+        playerManager_->SetID(pi.playerId_);
+        playerManager_->SetPosition(pi.posInfo_.position_);
+        playerManager_->SetRotation(pi.rotInfo_.rotation_);
 
-        std::cout << "Connecting to command server: " << SERVER_IP << ":" << SERVER_PORT << std::endl;
-        if (connect(tcpSock, (sockaddr*)&serverAddr, sizeof(serverAddr)) == SOCKET_ERROR) {
-            std::cerr << "Connect failed: " << WSAGetLastError() << std::endl;
-            closesocket(tcpSock);
-            tcpSock = INVALID_SOCKET;
-            std::cout << "Retrying in " << RETRY_DELAY_MS / 1000 << " seconds" << std::endl;
-            std::this_thread::sleep_for(std::chrono::milliseconds(RETRY_DELAY_MS));
-            continue;
-        }
-        std::cout << "Connected to command server!" << std::endl;
-
-        char buffer[128];
-
-        while (tcpRunning) {
-            int bytesReceived = recv(tcpSock, buffer, sizeof(buffer), 0);
-            
-            if (bytesReceived == 0) {
-                std::cout << "Server disconnected." << std::endl;
-                break;
-            }
-            else if (bytesReceived == SOCKET_ERROR) {
-                std::cerr << "TCP Recv failed: " << WSAGetLastError() << std::endl;
-                break;
-            }
-            
-            if (bytesReceived < 2) {
-                std::cout << "Invalid packet size: " << bytesReceived << std::endl;
-                continue;
-            }
-
-            char mode = buffer[0];
-            
-
-            if (mode == Position::RELATION) {
-                if (bytesReceived >= 25) {
-                    double* coords = reinterpret_cast<double*>(&buffer[1]);
-                    double x = coords[0];
-                    double y = coords[1];
-                    double z = coords[2];
-                    
-                    std::cout << "Relative target received - Target: " << " X:" << x << " Y:" << y << " Z:" << z << std::endl;
-                    movement->MoveRelation(x, y, z, this, 0.4);
-                }
-                else {
-                    std::cout << "Invalid mode 1 packet size: " << bytesReceived << std::endl;
-                }
-            }
-            else if (mode == Position::ABSOULUTE) {
-                if (bytesReceived >= 25) {
-                    double* coords = reinterpret_cast<double*>(&buffer[1]);
-                    double x = coords[0];
-                    double y = coords[1];
-                    double z = coords[2];
-                    
-                    /*std::cout << "Absolute target received - X:" << x << " Y:" << y << " Z:" << z << std::endl;*/
-                    if ((this->GetPosition() == Position(x, y, z)) && (x == 0 && y == 0)) {
-                        SendDone();
-                        continue;
-                    }
-                    /*if (this->GetPosition() != Position(x, y, z)) */
-                    movement->MoveToPosition(x, z, this, 0.5);
-                    /*else this->SendDone();*/
-                }
-                else {
-                    std::cout << "Invalid mode 2 packet size: " << bytesReceived << std::endl;
-                }
-            }
-            else {
-                std::cout << "Invalid mode: " << (int)mode << std::endl;
-            }
-        }
-        
-        closesocket(tcpSock);
-        tcpSock = INVALID_SOCKET;
-        
-        if (!tcpRunning) {
-            break;
-        }
-        
-        std::cout << "Attempting to reconnect..." << std::endl;
-        std::this_thread::sleep_for(std::chrono::milliseconds(RETRY_DELAY_MS));
+		std::this_thread::sleep_for(std::chrono::milliseconds(INTERVAL_MS));
     }
 }
 
-void NetworkManager::SendDone()
-{
-    if (tcpSock != INVALID_SOCKET) {
-        bool doneSignal = true;
-        send(tcpSock, reinterpret_cast<const char*>(&doneSignal),sizeof(doneSignal), 0);
+void NetworkManager::RecvCommands() {
+    recv(tcpSocket_, tcpBuffer_.data(), tcpBuffer_.size(), NULL);
 
-        /*std::cout << "doneSignal Done" << std::endl;*/
-    }
+    Signal();
+}
+
+//return and clear buffer
+vector<char> NetworkManager::GetBuffer() {
+    vector<char> ret(tcpBuffer_.begin(), tcpBuffer_.end());
+
+    tcpBuffer_.clear();
+
+    return ret;
 }
