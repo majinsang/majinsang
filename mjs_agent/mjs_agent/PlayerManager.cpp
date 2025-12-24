@@ -38,7 +38,9 @@ void PlayerManager::SetTargetPosition(Position& pos, Position::POSITION_TYPE typ
 
 	switch (type) {
 		case Position::POSITION_TYPE::ABSOULUTE : {
-
+			if (GetPosition() != pos) {
+				
+			}	
 			break;
 		}
 		case Position::POSITION_TYPE::RELATION: {

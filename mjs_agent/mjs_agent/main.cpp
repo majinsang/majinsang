@@ -1,11 +1,11 @@
 #include "pch.h"
 
+#include "common.hpp"
 #include "NetworkManager.h"
 #include "PlayerManager.h"
 
-#include "util.hpp"
-
 using namespace std;
+using namespace NETWORK;
 
 void banner();
 void init();
@@ -19,7 +19,24 @@ int main(int argc, char* argv[]) {
 
 		while (1) {
 			nm.RecvCommands();
-			nm.GetBuffer();
+
+			CommandHeaderPtr commandHeader = reinterpret_cast<CommandHeaderPtr>(nm.GetBuffer().data());
+
+			switch (commandHeader->opCode_) {
+				case OPERATION::POSITION: {
+					pm.SetTargetPosition(commandHeader->targetPi_.position_, commandHeader->targetPi_.type_);
+					break;
+				}
+				case OPERATION::ROTATION: {
+					pm.SetTargetRotation(commandHeader->targetRi_.rotation_, commandHeader->targetRi_.type_);
+					break;
+				}
+				default:
+					cerr << "Unknown operation code received." << endl;
+					break;
+			}
+
+			nm.Signal();
 		}
 	
 	}catch(const exception& e) {

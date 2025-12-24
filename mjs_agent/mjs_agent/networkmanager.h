@@ -30,8 +30,7 @@ private:
     PlayerManagerPtr playerManager_{};
 
     void UdpBufferClear();
-
-    void Signal();
+    
     void cleanup();
     bool init();
 
@@ -43,6 +42,8 @@ public:
 
     void RecvCurrentPlayerInformation();
     void RecvCommands();
+
+    void Signal();
 };
 
 using NetworkManagerPtr = NetworkManager*;

@@ -1,14 +1,7 @@
 #pragma once
 
-namespace NETWORK {
-    enum OPERATION {
-        POSITION,
-        ROTATION,
-    };
-}
-
 struct Rotation {
-    enum ROTATION_TYPE {
+    enum ROTATION_TYPE : uint8_t {
         YAW,
         PITCH
 	};
@@ -38,7 +31,7 @@ struct Rotation {
 using RotationPtr = Rotation*;
 
 struct Position {
-    enum POSITION_TYPE {
+    enum POSITION_TYPE : uint8_t {
         RELATION,
         ABSOULUTE
     };
@@ -91,3 +84,21 @@ struct PlayerInformation {
 };
 
 using PlayerInformationPtr = PlayerInformation*;
+
+
+namespace NETWORK {
+    enum OPERATION : uint8_t {
+        POSITION,
+        ROTATION,
+    };
+
+#pragma pack(push, 1)
+    struct CommandHeader {
+        OPERATION opCode_{};
+        PositionInformation targetPi_{};
+        RotationInformation targetRi_{};
+    };
+#pragma pack(pop)
+
+	using CommandHeaderPtr = CommandHeader*;
+};

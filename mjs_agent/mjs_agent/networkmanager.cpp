@@ -107,8 +107,6 @@ void NetworkManager::RecvCurrentPlayerInformation() {
 
 void NetworkManager::RecvCommands() {
     recv(tcpSocket_, tcpBuffer_.data(), tcpBuffer_.size(), NULL);
-
-    Signal();
 }
 
 //return and clear buffer
