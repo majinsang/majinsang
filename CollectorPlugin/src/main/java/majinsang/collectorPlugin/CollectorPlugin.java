@@ -11,17 +11,36 @@ import java.nio.charset.StandardCharsets;
 
 
 public final class CollectorPlugin extends JavaPlugin {
+    public static float[] getYawPitch(Location from, Location to) {
+        double dx = to.getX() - from.getX();
+        double dy = to.getY() - from.getY();
+        double dz = to.getZ() - from.getZ();
+
+        double distXZ = Math.sqrt(dx*dx + dz*dz);
+
+        float yaw = (float) Math.toDegrees(Math.atan2(-dx, dz));
+        float pitch = (float) Math.toDegrees(-Math.atan2(dy, distXZ));
+
+        return new float[]{yaw, pitch};
+    }
 
     @Override
     public void onEnable() {
         // Plugin startup logic
-        NetworkManager serverNetworkManager = new NetworkManager("127.0.0.1", 8986);
-        NetworkManager agentNetworkManager = new NetworkManager("127.0.0.1", 7777);
+//        NetworkManager serverNetworkManager = new NetworkManager("127.0.0.1", 8986);
+//        NetworkManager agentNetworkManager = new NetworkManager("127.0.0.1", 7777);
 
         getLogger().info("Plugin loaded");
 
         Bukkit.getScheduler().runTaskTimerAsynchronously(this, () -> {
             for (Player player : Bukkit.getOnlinePlayers()) {
+                player.sendMessage("yaw : " + player.getYaw());
+                player.sendMessage("pitch : " + player.getPitch());
+                float[] targetyawPitch = getYawPitch(player.getLocation(), new Location(player.getWorld(), 10, 0, 10));
+                player.sendMessage(
+                        String.format("[Target] Yaw: %.2f, Pitch: %.2f", targetyawPitch[0], targetyawPitch[1])
+                );
+
                 String name = player.getName();
                 byte[] nameBytes = name.getBytes(StandardCharsets.UTF_8);
 
@@ -47,8 +66,8 @@ public final class CollectorPlugin extends JavaPlugin {
                 buf.flip();
                 agentBuf.flip();
 
-                serverNetworkManager.SendUdpPosition(buf);
-                agentNetworkManager.SendUdpPosition(agentBuf);
+//                serverNetworkManager.SendUdpPosition(buf);
+//                agentNetworkManager.SendUdpPosition(agentBuf);
             }
         }, 0L, 2L);
 
@@ -62,7 +81,7 @@ public final class CollectorPlugin extends JavaPlugin {
 //            });
 //        });
 
-        serverNetworkManager.start();
+//        serverNetworkManager.start();
     }
 
     @Override
@@ -70,3 +89,4 @@ public final class CollectorPlugin extends JavaPlugin {
         // Plugin shutdown logic
     }
 }
+

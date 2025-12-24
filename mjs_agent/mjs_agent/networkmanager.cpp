@@ -10,14 +10,26 @@ NetworkManager::NetworkManager(PlayerManagerPtr pm) {
 
     playerManager_ = pm;
 
-    buffer_.resize(BUFFER_SIZE);
+    tcpBuffer_.resize(BUFFER_SIZE);
 
-    if (!init()) throw runtime_error("Failed to initialize NetworkManager");
+    if (!init()) {
+        cleanup();
+
+        throw runtime_error("Failed to initialize NetworkManager");
+    }
 }
 
 NetworkManager::~NetworkManager() {
+    cleanup();
+}
+
+void NetworkManager::cleanup() {
     closesocket(udpSocket_);
     closesocket(tcpSocket_);
+
+    if (udpThread_.joinable()) {
+        udpThread_.join();
+    }
 }
 
 bool NetworkManager::init() {
@@ -39,7 +51,7 @@ bool NetworkManager::init() {
         return false;
     }
 
-    udpThread_ = thread(&NetworkManager::RecvCurrentPosition, this);
+    udpThread_ = std::thread(&NetworkManager::RecvCurrentPlayerInformation, this);
 
     tcpSocket_ = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
     if (tcpSocket_ == INVALID_SOCKET) {
@@ -72,36 +84,36 @@ void NetworkManager::Signal() {
     send(tcpSocket_, reinterpret_cast<const char*>(&SUCCESS_SIGNAL), sizeof(SUCCESS_SIGNAL), 0);
 }
 
-void NetworkManager::RecvCurrentPosition() {
+void NetworkManager::RecvCurrentPlayerInformation() {
     while(1) {
-        Position pos{};
+        UdpBufferClear();
 
-        /*UdpBufferClear();*/
+        PlayerInformation pi{};
 
-        int bytesReceived = recvfrom(udpSocket_, reinterpret_cast<char*>(&pos), sizeof(Position), 0, NULL, NULL);
+        int bytesReceived = recvfrom(udpSocket_, reinterpret_cast<char*>(&pi), sizeof(PlayerInformation), 0, NULL, NULL);
 
         if (bytesReceived == SOCKET_ERROR) { 
             cerr << "UDP RecvFrom failed: " << WSAGetLastError() << endl; 
-            continue;
+            return;
         }
 
-        playerManager_->SetPosition(pos);
+        playerManager_->SetID(pi.playerId_);
+        playerManager_->SetPosition(pi.posInfo_.position_);
+        playerManager_->SetRotation(pi.rotInfo_.rotation_);
+
 		std::this_thread::sleep_for(std::chrono::milliseconds(INTERVAL_MS));
     }
-
 }
 
 void NetworkManager::RecvCommands() {
-    recv(tcpSocket_, buffer_.data(), buffer_.size(), NULL);
-
-    Signal();
+    recv(tcpSocket_, tcpBuffer_.data(), tcpBuffer_.size(), NULL);
 }
 
 //return and clear buffer
 vector<char> NetworkManager::GetBuffer() {
-    vector<char> ret(buffer_.begin(), buffer_.end());
+    vector<char> ret(tcpBuffer_.begin(), tcpBuffer_.end());
 
-    buffer_.clear();
+    tcpBuffer_.clear();
 
     return ret;
 }

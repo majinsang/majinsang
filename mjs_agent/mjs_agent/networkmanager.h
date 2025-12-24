@@ -23,15 +23,15 @@ private:
 	constexpr static uint32_t INTERVAL_MS = 50;
 
     SOCKET udpSocket_{}, tcpSocket_{};
-    std::vector<char> buffer_{};
+    std::vector<char> tcpBuffer_{};
 
     std::thread udpThread_{};
 
     PlayerManagerPtr playerManager_{};
 
     void UdpBufferClear();
-
-    void Signal();
+    
+    void cleanup();
     bool init();
 
 public:
@@ -40,8 +40,10 @@ public:
 
     std::vector<char> GetBuffer();
 
-    void RecvCurrentPosition();
+    void RecvCurrentPlayerInformation();
     void RecvCommands();
+
+    void Signal();
 };
 
 using NetworkManagerPtr = NetworkManager*;

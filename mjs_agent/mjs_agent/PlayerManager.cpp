@@ -4,156 +4,79 @@
 
 using namespace std;
 
-PlayerManager::PlayerManager() {
+PlayerManager::PlayerManager(string version) {
 	positionLck_ = unique_lock<mutex>(positionMutex_);
+
+	inputManager_ = new InputManager(version);
+}
+
+PlayerManager::~PlayerManager() {
+		delete inputManager_;
+}
+
+int PlayerManager::GetID() {
+	return currentPlayerInformation_.playerId_;
+}
+
+void PlayerManager::SetID(const uint32_t id) {
+	currentPlayerInformation_.playerId_ = id;
 }
 
 Position PlayerManager::GetPosition() {
-    return currentPosition_;
+    return currentPlayerInformation_.posInfo_.position_;
 }
 
 void PlayerManager::SetPosition(const Position& pos) { 
     positionLck_.lock();
 
-    currentPosition_ = pos; currentPosition_.z += pos.z; 
+	currentPlayerInformation_.posInfo_.position_ = pos;
 }
 
 void PlayerManager::SetTargetPosition(Position& pos, Position::POSITION_TYPE type, double threshold) {
 	targetPositionInformation_.type_ = type;
 	targetPositionInformation_.position_ = pos;
+
+	switch (type) {
+		case Position::POSITION_TYPE::ABSOULUTE : {
+			if (GetPosition() != pos) {
+				
+			}	
+			break;
+		}
+		case Position::POSITION_TYPE::RELATION: {
+
+			break;
+		}			  
+		default:
+			cerr << "Unknown POSITION_TYPE" << endl;
+			break;
+	}
 }
 
-//void Movement::MoveToPosition(double targetX, double targetZ, NetworkManager* networkmanager, double threshold)
-//{
-//    InputManager::SendKeyInput('W', false);
-//    InputManager::SendKeyInput('A', false);
-//    InputManager::SendKeyInput('S', false);
-//    InputManager::SendKeyInput('D', false);
-//
-//    bool movingX = false;
-//    bool movingZ = false;
-//    while (networkmanager->IsUdpRunning()) {
-//        Position currentPosition = networkmanager->GetPosition();
-//
-//        double moveX = targetX - currentPosition.x;
-//        double moveZ = targetZ - currentPosition.z;
-//        double distance = sqrt(moveX * moveX + moveZ * moveZ);
-//
-//        if (distance < threshold) {
-//            cout << "Reached!" << endl;
-//            networkmanager->SendDone();
-//            break;
-//        }
-//
-//        if (movingX && abs(moveX) < threshold) {
-//            InputManager::SendKeyInput(moveX < 0 ? 'A' : 'D', false);
-//            movingX = false;
-//        }
-//        if (movingZ && abs(moveZ) < threshold) {
-//            InputManager::SendKeyInput(moveZ < 0 ? 'W' : 'S', false);
-//            movingZ = false;
-//        }
-//
-//        if (!movingX)
-//        {
-//            if (abs(moveX) > threshold) {
-//                InputManager::SendKeyInput(moveX < 0 ? 'A' : 'D', true);
-//                movingX = true;
-//            }
-//            else
-//            {
-//                InputManager::SendKeyInput(moveX < 0 ? 'A' : 'D', false);
-//                movingX = false;
-//            }
-//        }
-//        if (!movingZ)
-//        {
-//            if (abs(moveZ) > threshold) {
-//                InputManager::SendKeyInput(moveZ < 0 ? 'W' : 'S', true);
-//                movingZ = true;
-//            }
-//            else
-//            {
-//                InputManager::SendKeyInput(moveZ < 0 ? 'W' : 'S', false);
-//                movingZ = false;
-//            }
-//        }
-//        Sleep(50);
-//    }
-//    InputManager::SendKeyInput('W', false);
-//    InputManager::SendKeyInput('A', false);
-//    InputManager::SendKeyInput('S', false);
-//    InputManager::SendKeyInput('D', false);
-//}
-//
-//void Movement::MoveRelation(double relativeX, double relativeY, double relativeZ, NetworkManager* networkmanager, double threshold)
-//{
-//    InputManager::SendKeyInput('W', false);
-//    InputManager::SendKeyInput('A', false);
-//    InputManager::SendKeyInput('S', false);
-//    InputManager::SendKeyInput('D', false);
-//
-//    Position currentPosition = networkmanager->GetPosition();
-//    
-//    double targetX = currentPosition.x + relativeX;
-//    double targetZ = currentPosition.z + relativeZ;
-//    
-//    cout << "Relative Move - Relative: X=" << relativeX << " Z=" << relativeZ 
-//              << " | Absolute: X=" << targetX << " Z=" << targetZ << endl;
-//
-//    bool movingX = false;
-//    bool movingZ = false;
-//
-//    while (networkmanager->IsUdpRunning()) {
-//        currentPosition = networkmanager->GetPosition();
-//
-//        double moveX = targetX - currentPosition.x;
-//        double moveZ = targetZ - currentPosition.z;
-//        double distance = sqrt(moveX * moveX + moveZ * moveZ);
-//
-//        if (distance < threshold) {
-//            cout << "Reached relative position!" << endl;
-//            networkmanager->SendDone();
-//            break;
-//        }
-//
-//        if (movingX && abs(moveX) < threshold) {
-//            InputManager::SendKeyInput(moveX < 0 ? 'A' : 'D', false);
-//            movingX = false;
-//        }
-//
-//        if (!movingX) {
-//            if (abs(moveX) > threshold) {
-//                InputManager::SendKeyInput(moveX < 0 ? 'A' : 'D', true);
-//                movingX = true;
-//            }
-//            else {
-//                InputManager::SendKeyInput(moveX < 0 ? 'A' : 'D', false);
-//                movingX = false;
-//            }
-//        }
-//
-//        if (movingZ && abs(moveZ) < threshold) {
-//            InputManager::SendKeyInput(moveZ < 0 ? 'W' : 'S', false);
-//            movingZ = false;
-//        }
-//
-//        if (!movingZ) {
-//            if (abs(moveZ) > threshold) {
-//                InputManager::SendKeyInput(moveZ < 0 ? 'W' : 'S', true);
-//                movingZ = true;
-//            }
-//            else {
-//                InputManager::SendKeyInput(moveZ < 0 ? 'W' : 'S', false);
-//                movingZ = false;
-//            }
-//        }
-//
-//        Sleep(50);
-//    }
-//
-//    InputManager::SendKeyInput('W', false);
-//    InputManager::SendKeyInput('A', false);
-//    InputManager::SendKeyInput('S', false);
-//    InputManager::SendKeyInput('D', false);
-//}
+Rotation PlayerManager::GetRotation() {
+	return currentPlayerInformation_.rotInfo_.rotation_;
+}
+
+void PlayerManager::SetRotation(const Rotation& rot) {
+	positionLck_.lock();
+
+	currentPlayerInformation_.rotInfo_.rotation_ = rot;
+}
+
+void PlayerManager::SetTargetRotation(Rotation& rot, Rotation::ROTATION_TYPE type, double threshold) {
+	targetRotationInformation_.type_ = type;
+	targetRotationInformation_.rotation_ = rot;
+	switch (type) {
+		case Rotation::ROTATION_TYPE::YAW: {
+
+			break;
+		}
+		case Rotation::ROTATION_TYPE::PITCH: {
+
+			break;
+		}			  
+		default:
+			cerr << "Unknown ROTATION_TYPE" << endl;
+			break;
+	}
+}
