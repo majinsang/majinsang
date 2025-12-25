@@ -3,7 +3,7 @@ from dataclasses import dataclass
 import socket
 import struct
 
-from PlayerInformationCollector import PlayerInformation
+from PlayerInformationCollector import PlayerInformation, Rotation
 from PlayerInformationCollector import Position
 
 class NetworkManager:
@@ -39,11 +39,11 @@ class NetworkManager:
         self.pluginTcpSocket_ = None
         self.addr_ = None
 
-    def __ParsePlayerData(self, data: bytes) -> tuple[str, tuple[float, float, float]]:
-        nameLength = struct.unpack('i', data[:4])
-        name = data[4:4+int(nameLength[0])].decode('utf-8')
-        x, y, z = struct.unpack('ddd', data[4+int(nameLength[0]):4+int(nameLength[0])+24])
-        return name, (x, y, z)
+    def __ParsePlayerData(self, data: bytes) -> tuple[str, tuple[float, float, float], tuple[float, float]]:
+        uuid = data[:8].hex()
+        x, y, z = struct.unpack('ddd', data[8:32])
+        yaw, pitch = struct.unpack('dd', data[32:48])
+        return uuid, (x, y, z), (yaw, pitch)
     
     def UdpServerOpen(self, port):
         self.udpSocket_ = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
@@ -70,7 +70,7 @@ class NetworkManager:
         res : bool = self.addr_[0].recv(self.BOOL)
         print(f'SendTargetPosition Ack: {bool(struct.unpack("b", res)[0])}')
 
-    def GetPlayerPosition(self) -> PlayerInformation:
+    def GetPlayerInformation(self) -> PlayerInformation:
         self.udpSocket_.setblocking(False)
 
         try:
@@ -83,8 +83,8 @@ class NetworkManager:
 
         data, clientAddr = self.udpSocket_.recvfrom(self.RECV_DATA_BYTES)
         
-        name, (x, y, z) = self.__ParsePlayerData(data)
-        pi = PlayerInformation(name, Position(x, y, z))
+        playerId, (x, y, z), (yaw, pitch) = self.__ParsePlayerData(data)
+        pi = PlayerInformation(playerId, Position(x, y, z), Rotation(yaw, pitch))
 
         return pi
 
@@ -92,25 +92,22 @@ class NetworkManager:
     def Close(self):
         self.socket_.close()
 
-if __name__ == "__main__":
+def udp_test():
+    UDP_PORT = 8986
+
     nm = NetworkManager('localhost')
-    nm.UdpServerOpen(8986)
-    nm.TcpServerOpen('localhost', 8888)
-    nm.AcceptConnection()
+    nm.UdpServerOpen(UDP_PORT)
 
     import time
 
     while 1:
-        playerInformation = nm.GetPlayerPosition()
+        playerInformation = nm.GetPlayerInformation()
 
-        print(f'Player Name: {playerInformation.name_}, Position: ({playerInformation.position_.x_}, {playerInformation.position_.y_}, {playerInformation.position_.z_})')
+        print(f'Player ID: {playerInformation.playerId_} '
+              f'Position: ({playerInformation.position_.x_}, {playerInformation.position_.y_}, {playerInformation.position_.z_}) '
+              f'Rotation: (Yaw: {playerInformation.rotation_.yaw_}, Pitch: {playerInformation.rotation_.pitch_})')
+        time.sleep(0.1)
 
-        input("Press Enter to send target position...")
-        x = float(input("Enter x: "))
-        y = float(input("Enter y: "))
-        z = float(input("Enter z: "))
 
-        time.sleep(3)
-
-        nm.SendTargetPosition(NetworkManager.POSITION_TYPE.ABSOLUTE, x, y, z)
-
+if __name__ == "__main__":
+    udp_test()
