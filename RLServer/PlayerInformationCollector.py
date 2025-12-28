@@ -7,9 +7,15 @@ class Position:
     z_: float
 
 @dataclass
+class Rotation:
+    yaw_: float
+    pitch_: float
+
+@dataclass
 class PlayerInformation:
-    name_ : str
+    playerId_ : int
     position_ : Position
+    rotation_ : Rotation
 
 
 class PlayerInformationCollector:
@@ -18,14 +24,15 @@ class PlayerInformationCollector:
     def __init__(self):
         self.playerList_ = []
 
-    def AddPlayer(self, name: str, x: float, y: float, z: float):
+    def AddPlayer(self, playerId: int, x: float, y: float, z: float, yaw: float, pitch: float):
         pos = Position(x, y, z)
-        playerInfo = PlayerInformation(name, pos)
+        rot = Rotation(yaw, pitch)
+        playerInfo = PlayerInformation(playerId, pos, rot)
         self.playerList_.append(playerInfo)
 
-    def GetPlayerPosition(self, name: str) -> Position | None:
+    def GetPlayerPosition(self, playerId: int) -> Position | None:
         for player in self.playerList_:
-            if player.name_ == name:
+            if player.playerId_ == playerId:
                 return player.position_
             
         return None
