@@ -17,7 +17,18 @@ int main(int argc, char* argv[]) {
 		PlayerManager pm("1.21.8");
 		NetworkManager nm(&pm);
 
-		while (1) {
+		while(1) {
+			auto pos = pm.GetPosition();
+			auto rot = pm.GetRotation();
+
+			cout << "ID { " << pm.GetID() << " }" << endl;
+			cout << "Position { " << pos.x << ", " << pos.y << ", " << pos.z << " }" << endl;
+			cout << "Rotation { " << rot.yaw << ", " << rot.pitch << " }" << endl;
+
+			Sleep(1000);
+		}
+
+		/*while (1) {
 			nm.RecvCommands();
 
 			CommandHeaderPtr commandHeader = reinterpret_cast<CommandHeaderPtr>(nm.GetBuffer().data());
@@ -37,7 +48,7 @@ int main(int argc, char* argv[]) {
 			}
 
 			nm.Signal();
-		}
+		}*/
 	
 	}catch(const exception& e) {
 		cerr << "Exception: " << e.what() << endl;

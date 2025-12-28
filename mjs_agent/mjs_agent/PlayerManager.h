@@ -11,8 +11,7 @@ private:
 	/*Position currentPosition_{};*/
 	PlayerInformation currentPlayerInformation_{};
 
-	std::mutex positionMutex_{};
-	std::unique_lock<std::mutex> positionLck_{};
+	std::mutex mtx_{};
 
 	PositionInformation targetPositionInformation_{};
 	RotationInformation targetRotationInformation_{};

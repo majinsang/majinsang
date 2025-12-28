@@ -5,8 +5,6 @@
 using namespace std;
 
 PlayerManager::PlayerManager(string version) {
-	positionLck_ = unique_lock<mutex>(positionMutex_);
-
 	inputManager_ = new InputManager(version);
 }
 
@@ -19,17 +17,19 @@ int PlayerManager::GetID() {
 }
 
 void PlayerManager::SetID(const uint32_t id) {
+	std::unique_lock<std::mutex> lck(mtx_);
+
 	currentPlayerInformation_.playerId_ = id;
 }
 
 Position PlayerManager::GetPosition() {
-    return currentPlayerInformation_.posInfo_.position_;
+    return currentPlayerInformation_.position_;
 }
 
 void PlayerManager::SetPosition(const Position& pos) { 
-    positionLck_.lock();
+	std::unique_lock<std::mutex> lck(mtx_);
 
-	currentPlayerInformation_.posInfo_.position_ = pos;
+	currentPlayerInformation_.position_ = pos;
 }
 
 void PlayerManager::SetTargetPosition(Position& pos, Position::POSITION_TYPE type, double threshold) {
@@ -54,13 +54,13 @@ void PlayerManager::SetTargetPosition(Position& pos, Position::POSITION_TYPE typ
 }
 
 Rotation PlayerManager::GetRotation() {
-	return currentPlayerInformation_.rotInfo_.rotation_;
+	return currentPlayerInformation_.rotation_;
 }
 
 void PlayerManager::SetRotation(const Rotation& rot) {
-	positionLck_.lock();
+	std::unique_lock<std::mutex> lck(mtx_);
 
-	currentPlayerInformation_.rotInfo_.rotation_ = rot;
+	currentPlayerInformation_.rotation_ = rot;
 }
 
 void PlayerManager::SetTargetRotation(Rotation& rot, Rotation::ROTATION_TYPE type, double threshold) {
