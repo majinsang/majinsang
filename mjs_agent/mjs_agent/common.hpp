@@ -63,25 +63,31 @@ struct Position {
 
 using PositionPtr = Position*;
 
+#pragma pack(push, 1)
 struct PositionInformation {
     Position::POSITION_TYPE type_{};
     Position position_{};
 };
+#pragma pack(pop)
 
 using PositionInformationPtr = PositionInformation*;
 
+#pragma pack(push, 1)
 struct RotationInformation {
     Rotation::ROTATION_TYPE type_{};
     Rotation rotation_{};
 };
+#pragma pack(pop)
 
 using RotationInformationPtr = RotationInformation*;
 
+#pragma pack(push, 1)
 struct PlayerInformation {
-    uint32_t playerId_{};
-    PositionInformation posInfo_{};
-    RotationInformation rotInfo_{};
+    uint64_t playerId_{};
+    Position position_{};
+    Rotation rotation_{};
 };
+#pragma pack(pop)
 
 using PlayerInformationPtr = PlayerInformation*;
 

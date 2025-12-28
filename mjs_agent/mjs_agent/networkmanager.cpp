@@ -64,10 +64,10 @@ bool NetworkManager::init() {
     serverAddr.sin_port = htons(SERVER_PORT);
     serverAddr.sin_addr.s_addr = ADDR_ANY;
 
-    if (connect(tcpSocket_, (sockaddr*)&serverAddr, sizeof(serverAddr)) == SOCKET_ERROR) {
+    /*if (connect(tcpSocket_, (sockaddr*)&serverAddr, sizeof(serverAddr)) == SOCKET_ERROR) {
         cerr << "Connect failed: " << WSAGetLastError() << endl;
         return false;
-    }
+    }*/
 }
 
 void NetworkManager::UdpBufferClear() {
@@ -98,8 +98,8 @@ void NetworkManager::RecvCurrentPlayerInformation() {
         }
 
         playerManager_->SetID(pi.playerId_);
-        playerManager_->SetPosition(pi.posInfo_.position_);
-        playerManager_->SetRotation(pi.rotInfo_.rotation_);
+        playerManager_->SetPosition(pi.position_);
+        playerManager_->SetRotation(pi.rotation_);
 
 		std::this_thread::sleep_for(std::chrono::milliseconds(INTERVAL_MS));
     }
