@@ -15,12 +15,25 @@ public final class CollectorPlugin extends JavaPlugin {
 
     void PlayerInformationFunction() {
         for(Player player : Bukkit.getOnlinePlayers()) {
-            Location loc = player.getLocation();
+            try {
+                // 패킷 0x01: 플레이어 위치/회전 정보
+                PlayerInformation playerInfo = new PlayerInformation(player);
+                serverNetworkManager.send(playerInfo.serialize());
+                agentNetworkManager.send(playerInfo.serialize());
 
-            PlayerInformation pi = new PlayerInformation(player);
+                // 패킷 0x02: 인벤토리 정보
+                InventoryInformation invInfo = new InventoryInformation(player);
+                serverNetworkManager.send(invInfo.serialize());
+                agentNetworkManager.send(invInfo.serialize());
 
-            serverNetworkManager.send(pi.serialize());
-            agentNetworkManager.send(pi.serialize());
+                // 패킷 0x03: 근처 블록 정보
+                NearbyInformation nearbyInfo = new NearbyInformation(player);
+                serverNetworkManager.send(nearbyInfo.serialize());
+                agentNetworkManager.send(nearbyInfo.serialize());
+            } catch (Exception e) {
+                getLogger().severe("[ERROR] Failed to send packets for player " + player.getName());
+                e.printStackTrace();
+            }
         }
     }
 
