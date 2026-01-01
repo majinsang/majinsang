@@ -1,36 +1,12 @@
-import enum
-from dataclasses import dataclass
+
 import socket
 import struct
 
-from PlayerInformationCollector import PlayerInformation, Rotation
-from PlayerInformationCollector import Position
+from common import *
 
 class NetworkManager:
     RECV_DATA_BYTES = 1024
     BOOL = 1
-
-    class POSITION_TYPE(enum.Enum):
-        NONE = 0,
-        RELATIVE = 1,
-        ABSOLUTE = 2
-
-    @dataclass
-    class POSITION_INFORMATION:
-        type_ : "NetworkManager.POSITION_TYPE"
-        x_: float
-        y_: float
-        z_: float
-
-        def ToBytes(self):
-            return struct.pack(
-                '<b d d d',
-                self.type_.value,
-                self.x_,
-                self.y_,
-                self.z_
-            )
-
 
     def __init__(self, host):
         self.host_ = host
@@ -56,12 +32,27 @@ class NetworkManager:
         self.agentTcpSocket_.bind((host, port))
         self.agentTcpSocket_.listen(1)
 
-    def __MakePositionInformation(self, type : "NetworkManager.POSITION_TYPE", x: float, y: float, z: float) -> POSITION_INFORMATION:
-        pi = NetworkManager.POSITION_INFORMATION(type, x, y, z)
+    def __MakePositionInformation(self, type : POSITION_TYPE, x: float, y: float, z: float) -> PositionInformation:
+        pi = PositionInformation(type, x, y, z)
         return pi
+    
+    def __MakeRotationInformation(self, type : ROTATION_TYPE, yaw: float, pitch: float) -> RotationInformation:
+        ri = RotationInformation(type, Rotation(yaw, pitch))
+        return ri
+    
+    def __MakeCommandHeader(self, operationType : OPERATION_TYPE, targetPi : PositionInformation, targetRi : RotationInformation) -> CommandHeader:
+        ch = CommandHeader(operationType, targetPi, targetRi)
+        return ch
         
     def AcceptConnection(self):
         self.addr_ = self.agentTcpSocket_.accept()
+
+    def SendTargetRotation(self, type : ROTATION_TYPE, yaw: float, pitch: float):
+        targetRotationInformation = self.__MakeRotationInformation(type, yaw, pitch)
+
+        self.addr_[0].sendall(targetRotationInformation.ToBytes())
+        res : bool = self.addr_[0].recv(self.BOOL)
+        print(f'SendTargetRotation Ack: {bool(struct.unpack("b", res)[0])}')
 
     def SendTargetPosition(self, type : "NetworkManager.POSITION_TYPE", x: float, y: float, z: float):
         targetPositionInformation = self.__MakePositionInformation(type, x, y, z)
@@ -69,6 +60,20 @@ class NetworkManager:
         self.addr_[0].sendall(targetPositionInformation.ToBytes())
         res : bool = self.addr_[0].recv(self.BOOL)
         print(f'SendTargetPosition Ack: {bool(struct.unpack("b", res)[0])}')
+
+    def SendCommand(self, operationType : OPERATION_TYPE, **kwargs):
+        x = kwargs.get('x', 0.0)
+        y = kwargs.get('y', 0.0)
+        z = kwargs.get('z', 0.0)
+        yaw = kwargs.get('yaw', 0.0)
+        pitch = kwargs.get('pitch', 0.0)
+
+        targetPi = self.__MakePositionInformation(POSITION_TYPE.ABSOLUTE, x, y, z)
+        targetRi = self.__MakeRotationInformation(ROTATION_TYPE.NONE, yaw, pitch)
+        commandHeader = self.__MakeCommandHeader(operationType, targetPi, targetRi)
+
+        self.addr_[0].sendall(commandHeader.ToBytes())
+        res : bool = self.addr_[0].recv(self.BOOL)
 
     def GetPlayerInformation(self) -> PlayerInformation:
         self.udpSocket_.setblocking(False)
@@ -88,26 +93,38 @@ class NetworkManager:
 
         return pi
 
-
     def Close(self):
         self.socket_.close()
 
 def udp_test():
     UDP_PORT = 8986
+    TCP_PORT = 8888
 
     nm = NetworkManager('localhost')
     nm.UdpServerOpen(UDP_PORT)
 
+    while True:
+        pi = nm.GetPlayerInformation()
+        print(f'Player ID: {pi.playerId_}, Position: ({pi.position_.x_}, {pi.position_.y_}, {pi.position_.z_}), Rotation: (Yaw: {pi.rotation_.yaw_}, Pitch: {pi.rotation_.pitch_})')
+
+def main():
+    UDP_PORT = 8986
+    TCP_PORT = 8888
+
+    nm = NetworkManager('localhost')
+    nm.UdpServerOpen(UDP_PORT)
+    nm.TcpServerOpen('localhost', TCP_PORT)
+
+    nm.AcceptConnection()
+
     import time
 
-    while 1:
-        playerInformation = nm.GetPlayerInformation()
-
-        print(f'Player ID: {playerInformation.playerId_} '
-              f'Position: ({playerInformation.position_.x_}, {playerInformation.position_.y_}, {playerInformation.position_.z_}) '
-              f'Rotation: (Yaw: {playerInformation.rotation_.yaw_}, Pitch: {playerInformation.rotation_.pitch_})')
-        time.sleep(0.1)
+    while True:
+        input("Target Position Send...")
+        time.sleep(5)
+        
+        nm.SendCommand(OPERATION_TYPE.POSITION, x=10.0, y=-60.0, z=10.0, yaw=0.0, pitch=0.0)
 
 
 if __name__ == "__main__":
-    udp_test()
+    main()

@@ -22,6 +22,12 @@ HWND InputManager::GetFocus() {
     return GetForegroundWindow();
 }
 
+bool InputManager:: isInputed(WORD currentKey, bool down) {
+    if (GetKeyState(currentKey) < 0 && down) return true;
+
+    return false;
+}
+
 void InputManager::Key(WORD vKey, bool isKeyDown) {
     INPUT input = { 0 }; 
 

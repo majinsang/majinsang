@@ -14,6 +14,8 @@ private:
     constexpr static uint16_t SERVER_PORT = 8888;
     constexpr static uint16_t UDP_PORT = 7777;
 
+    constexpr static char SERVER_IP[] = "127.0.0.1";
+
     constexpr static uint8_t MAX_RETRY_ATTEMPTS = 5;
 	constexpr static uint32_t RETRY_DELAY_MS = 5000;
 
@@ -21,6 +23,8 @@ private:
 
 	constexpr static size_t BUFFER_SIZE = 1024;
 	constexpr static uint32_t INTERVAL_MS = 50;
+
+    WSADATA wsaData_{};
 
     SOCKET udpSocket_{}, tcpSocket_{};
     std::vector<char> tcpBuffer_{};
