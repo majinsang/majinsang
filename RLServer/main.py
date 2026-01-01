@@ -8,7 +8,6 @@ def make_env():
     env = Monitor(env)
     return env
 
-
 if __name__ == "__main__":
     env = DummyVecEnv([make_env])
 

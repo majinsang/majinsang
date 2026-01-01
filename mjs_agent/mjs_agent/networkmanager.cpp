@@ -33,16 +33,22 @@ void NetworkManager::cleanup() {
 }
 
 bool NetworkManager::init() {
+    if (WSAStartup(MAKEWORD(2, 2), &wsaData_) != 0) {
+        cerr << "WSAStartup failed." << endl;
+        return false;
+    }
+
     udpSocket_ = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
     if (udpSocket_ == INVALID_SOCKET) {
         cerr << "UDP socket creation failed: " << WSAGetLastError() << endl;
         return false;
     }
 
-    sockaddr_in udpAddr;
+    sockaddr_in udpAddr{};
+
     udpAddr.sin_family = AF_INET;
     udpAddr.sin_port = htons(UDP_PORT);
-    udpAddr.sin_addr.s_addr = INADDR_ANY;
+	udpAddr.sin_addr.S_un.S_addr = INADDR_ANY;
 
     if (bind(udpSocket_, (sockaddr*)&udpAddr, sizeof(udpAddr)) == SOCKET_ERROR) {
         cerr << "UDP bind failed: " << WSAGetLastError() << endl;
@@ -59,15 +65,17 @@ bool NetworkManager::init() {
         return false;
     }
 
-    sockaddr_in serverAddr;
+    sockaddr_in serverAddr{};
     serverAddr.sin_family = AF_INET;
     serverAddr.sin_port = htons(SERVER_PORT);
-    serverAddr.sin_addr.s_addr = ADDR_ANY;
+	inet_pton(AF_INET, SERVER_IP, &serverAddr.sin_addr);
 
-    /*if (connect(tcpSocket_, (sockaddr*)&serverAddr, sizeof(serverAddr)) == SOCKET_ERROR) {
+    if (connect(tcpSocket_, (sockaddr*)&serverAddr, sizeof(serverAddr)) == SOCKET_ERROR) {
         cerr << "Connect failed: " << WSAGetLastError() << endl;
         return false;
-    }*/
+    }
+
+    return true;
 }
 
 void NetworkManager::UdpBufferClear() {
@@ -91,7 +99,6 @@ void NetworkManager::RecvCurrentPlayerInformation() {
         PlayerInformation pi{};
 
         int bytesReceived = recvfrom(udpSocket_, reinterpret_cast<char*>(&pi), sizeof(PlayerInformation), 0, NULL, NULL);
-
         if (bytesReceived == SOCKET_ERROR) { 
             cerr << "UDP RecvFrom failed: " << WSAGetLastError() << endl; 
             return;
@@ -107,13 +114,14 @@ void NetworkManager::RecvCurrentPlayerInformation() {
 
 void NetworkManager::RecvCommands() {
     recv(tcpSocket_, tcpBuffer_.data(), tcpBuffer_.size(), NULL);
+
 }
 
 //return and clear buffer
 vector<char> NetworkManager::GetBuffer() {
     vector<char> ret(tcpBuffer_.begin(), tcpBuffer_.end());
 
-    tcpBuffer_.clear();
+    /*tcpBuffer_.clear();*/
 
     return ret;
 }

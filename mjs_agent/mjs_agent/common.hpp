@@ -2,6 +2,7 @@
 
 struct Rotation {
     enum ROTATION_TYPE : uint8_t {
+        NONE,
         YAW,
         PITCH
 	};
@@ -32,6 +33,7 @@ using RotationPtr = Rotation*;
 
 struct Position {
     enum POSITION_TYPE : uint8_t {
+        NONE,
         RELATION,
         ABSOULUTE
     };
@@ -96,6 +98,7 @@ namespace NETWORK {
     enum OPERATION : uint8_t {
         POSITION,
         ROTATION,
+        ALL,
     };
 
 #pragma pack(push, 1)

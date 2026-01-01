@@ -12,6 +12,8 @@ class InputManager {
 	void SetFocus();
 	HWND GetFocus();
 
+	bool isInputed(WORD currentKey, bool down);
+
 	void Key(WORD vKey, bool isKeyDown);
 	void Mouse(int dx, int dy);
 	void SendMouseClick(const std::string& button, bool isDown);
