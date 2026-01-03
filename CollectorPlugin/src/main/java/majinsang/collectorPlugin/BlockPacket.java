@@ -12,7 +12,7 @@ import java.nio.ByteOrder;
 import java.util.UUID;
 
 /**
- * 건축 정보 패킷 (0x03)
+ * 블록 정보 패킷 (0x03)
  * - packetID: byte (0x03)
  * - id: uint32_t (4 bytes) - 플레이어 ID
  * - near_oak: byte (1 byte) - 나무 발견 여부 (0/1)
@@ -24,9 +24,9 @@ import java.util.UUID;
  * - table_Y: double (8 bytes) - 가장 가까운 작업대 Y
  * - table_Z: double (8 bytes) - 가장 가까운 작업대 Z
  * 
- * 총 크기: 1 + 4 + 1 + 8*3 + 1 + 8*3 = 54 bytes
+ * 총 크기: 1 + 4 + 1 + 8*3 + 1 + 8*3 = 55 bytes
  */
-class BuildingPacket extends GamePacket {
+class BlockPacket extends GamePacket {
     private static final byte PACKET_ID = 0x03;
     private static final int SEARCH_RADIUS = 32; // 탐색 반경
 
@@ -40,7 +40,7 @@ class BuildingPacket extends GamePacket {
     private final double tableY;
     private final double tableZ;
 
-    BuildingPacket(Player player) {
+    BlockPacket(Player player) {
         this.playerId = player.getUniqueId();
         
         Location playerLoc = player.getLocation();

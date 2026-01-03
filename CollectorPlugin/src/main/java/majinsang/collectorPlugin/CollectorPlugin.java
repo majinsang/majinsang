@@ -18,11 +18,11 @@ public final class CollectorPlugin extends JavaPlugin {
             // 서버(8888)로는 새로운 프로토콜의 3가지 패킷 전송
             PlayerPacket playerPacket = new PlayerPacket(player);
             InventoryPacket inventoryPacket = new InventoryPacket(player);
-            BuildingPacket buildingPacket = new BuildingPacket(player);
+            BlockPacket blockPacket = new BlockPacket(player);
             
             serverNetworkManager.send(playerPacket.serialize());
             serverNetworkManager.send(inventoryPacket.serialize());
-            serverNetworkManager.send(buildingPacket.serialize());
+            serverNetworkManager.send(blockPacket.serialize());
 
             // 에이전트(7777)로는 기존 PlayerInformation 전송
             PlayerInformation pi = new PlayerInformation(player);
