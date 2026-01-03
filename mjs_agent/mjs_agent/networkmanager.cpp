@@ -90,7 +90,7 @@ void NetworkManager::UdpBufferClear() {
 
 void NetworkManager::Signal() {
     send(tcpSocket_, reinterpret_cast<const char*>(&SUCCESS_SIGNAL), sizeof(SUCCESS_SIGNAL), 0);
-}
+}   
 
 void NetworkManager::RecvCurrentPlayerInformation() {
     while(1) {

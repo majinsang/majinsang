@@ -7,16 +7,6 @@ class InputManager {
 	constexpr static char TITLE[] = "Minecraft ";
 	constexpr static int MOUSE_SENSITIVITY = 5;
 
-	HWND hwnd_{};
-
-	void SetFocus();
-	HWND GetFocus();
-
-	bool isInputed(WORD currentKey, bool down);
-
-	void Key(WORD vKey, bool isKeyDown);
-	void Mouse(int dx, int dy);
-	void SendMouseClick(const std::string& button, bool isDown);
 public:
 	enum MOVE_TYPE {
 		FORWARD,
@@ -32,10 +22,21 @@ public:
 		PITCH_DOWN
 	};
 
+private:
+	HWND hwnd_{};
+
+	void SetFocus();
+	HWND GetFocus();
+
+
+	void Key(WORD vKey, bool isKeyDown);
+	void Mouse(int dx, int dy);
+	void SendMouseClick(const std::string& button, bool isDown);
+public:
 	InputManager(std::string version);
 	~InputManager() = default;
 
-	void move(MOVE_TYPE type, bool keyDown);
+	bool move(MOVE_TYPE type, bool keyDown);
 	void rotate(ROTATE_TYPE type);
 };
 

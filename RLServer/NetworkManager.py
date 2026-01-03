@@ -47,21 +47,29 @@ class NetworkManager:
     def AcceptConnection(self):
         self.addr_ = self.agentTcpSocket_.accept()
 
-    def SendTargetRotation(self, type : ROTATION_TYPE, yaw: float, pitch: float):
+    def SendTargetRotation(self, type : ROTATION_TYPE, yaw: float, pitch: float) -> bool:
         targetRotationInformation = self.__MakeRotationInformation(type, yaw, pitch)
 
-        self.addr_[0].sendall(targetRotationInformation.ToBytes())
-        res : bool = self.addr_[0].recv(self.BOOL)
-        print(f'SendTargetRotation Ack: {bool(struct.unpack("b", res)[0])}')
+        try:
+            self.addr_[0].sendall(targetRotationInformation.ToBytes())
+        except (BrokenPipeError, ConnectionResetError, TimeoutError):
+            print("Connection closed by client")
+            return False
 
-    def SendTargetPosition(self, type : "NetworkManager.POSITION_TYPE", x: float, y: float, z: float):
+        return True 
+
+    def SendTargetPosition(self, type : "NetworkManager.POSITION_TYPE", x: float, y: float, z: float) -> bool:
         targetPositionInformation = self.__MakePositionInformation(type, x, y, z)
 
-        self.addr_[0].sendall(targetPositionInformation.ToBytes())
-        res : bool = self.addr_[0].recv(self.BOOL)
-        print(f'SendTargetPosition Ack: {bool(struct.unpack("b", res)[0])}')
+        try:
+            self.addr_[0].sendall(targetPositionInformation.ToBytes())
+        except (BrokenPipeError, ConnectionResetError, TimeoutError):
+            print("Connection closed by client")
+            return False
 
-    def SendCommand(self, operationType : OPERATION_TYPE, **kwargs):
+        return True
+
+    def SendCommand(self, operationType : OPERATION_TYPE, **kwargs) -> bool:
         x = kwargs.get('x', 0.0)
         y = kwargs.get('y', 0.0)
         z = kwargs.get('z', 0.0)
@@ -72,8 +80,13 @@ class NetworkManager:
         targetRi = self.__MakeRotationInformation(ROTATION_TYPE.NONE, yaw, pitch)
         commandHeader = self.__MakeCommandHeader(operationType, targetPi, targetRi)
 
-        self.addr_[0].sendall(commandHeader.ToBytes())
-        res : bool = self.addr_[0].recv(self.BOOL)
+        try:
+            self.addr_[0].sendall(commandHeader.ToBytes())
+        except (BrokenPipeError, ConnectionResetError, TimeoutError):
+            print("Connection closed by client")
+            return False
+
+        return True
 
     def GetPlayerInformation(self) -> PlayerInformation:
         self.udpSocket_.setblocking(False)
@@ -123,7 +136,9 @@ def main():
         input("Target Position Send...")
         time.sleep(5)
         
-        nm.SendCommand(OPERATION_TYPE.POSITION, x=10.0, y=-60.0, z=10.0, yaw=0.0, pitch=0.0)
+        if not nm.SendCommand(OPERATION_TYPE.POSITION, x=10.0, y=-60.0, z=10.0, yaw=0.0, pitch=0.0):
+            print("Retry AcceptConnection...")
+            nm.AcceptConnection()
 
 
 if __name__ == "__main__":

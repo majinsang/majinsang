@@ -22,22 +22,14 @@ HWND InputManager::GetFocus() {
     return GetForegroundWindow();
 }
 
-bool InputManager:: isInputed(WORD currentKey, bool down) {
-    if (GetKeyState(currentKey) < 0 && down) return true;
-
-    return false;
-}
-
 void InputManager::Key(WORD vKey, bool isKeyDown) {
     INPUT input = { 0 }; 
 
     input.type = INPUT_KEYBOARD;
     input.ki.wVk = vKey;
 
-    if (!isKeyDown)
-    {
-        input.ki.dwFlags = KEYEVENTF_KEYUP;
-    }
+    if (!isKeyDown) input.ki.dwFlags = KEYEVENTF_KEYUP;
+
     SendInput(1, &input, sizeof(INPUT));
 }
 
@@ -52,24 +44,32 @@ void InputManager::Mouse(int x, int y) {
     SendInput(1, &input, sizeof(INPUT));
 }
 
-void InputManager::move(InputManager::MOVE_TYPE type, bool keyDown) {
+bool InputManager::move(InputManager::MOVE_TYPE type, bool keyDown) {
+    
     switch (type) {
     case FORWARD:
         Key('W', keyDown);
+        cout << "W" << keyDown << endl;
         break;
     case BACKWARD:
         Key('S', keyDown);
+        cout << "S" << keyDown << endl;
         break;
     case LEFT:
         Key('A', keyDown);
+        cout << "A" << keyDown << endl;
         break;
     case RIGHT:
         Key('D', keyDown);
+        cout << "D" << keyDown << endl;
         break;
     default:
         cerr << "[InputManager] Somethings wrong" << endl;
+        return false;
         break;
     }
+
+    return true;
 }
 
 void InputManager::rotate(InputManager::ROTATE_TYPE type) {
