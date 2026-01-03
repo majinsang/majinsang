@@ -6,13 +6,30 @@
 class PlayerManager {
 private:
 	constexpr static double PI = 3.14159265358979323846;
+
 	constexpr static double YAW_180_DEGREE = 180.0;
 	constexpr static double FORWARD_ANGLE_DEGREE = 45;
 	constexpr static double BACKWARD_ANGLE_DEGREE = 135;
 
+	constexpr static int MOVE_INTERVAL_MS = 50;
+
+	enum DIRECTION_TYPE {
+		NONE,
+		FORWARD,
+		FORWARD_RIGHT,
+		FORWARD_LEFT,
+		BACKWARD,
+		BACKWARD_RIGHT,
+		BACKWARD_LEFT,
+		LEFT,
+		RIGHT
+	};
+
 
 	//PlayerController -> PlayerManager
 	InputManagerPtr inputManager_{};
+	bool inputChanged_{};
+	DIRECTION_TYPE currentDirectionType_{};
 
 	/*Position currentPosition_{};*/
 	PlayerInformation currentPlayerInformation_{};
@@ -21,6 +38,8 @@ private:
 
 	PositionInformation targetPositionInformation_{};
 	RotationInformation targetRotationInformation_{};
+
+	void ResetInputedSate(const DIRECTION_TYPE& dt);
 
 public:
 	PlayerManager(std::string version);

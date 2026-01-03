@@ -25,7 +25,8 @@ int main(int argc, char* argv[]) {
 			
 			switch (commandHeader->opCode_) {
 				case OPERATION::POSITION: {
-					pm.SetTargetPosition(commandHeader->targetPi_.position_, commandHeader->targetPi_.type_);wdw
+					pm.SetTargetPosition(commandHeader->targetPi_.position_, commandHeader->targetPi_.type_);
+					break;
 				}
 				case OPERATION::ROTATION: {
 					pm.SetTargetRotation(commandHeader->targetRi_.rotation_, commandHeader->targetRi_.type_);

@@ -34,16 +34,24 @@ using RotationPtr = Rotation*;
 struct Position {
     enum POSITION_TYPE : uint8_t {
         NONE,
-        RELATION,
-        ABSOULUTE
+        REL,
+        ABS
     };
+
+    static constexpr double THRESHOLD = 0.5;
 
     double x = 0.0;
     double y = 0.0;
     double z = 0.0;
+    
+    
 
     bool operator==(const Position& other) const {
-        return int(x) == int(other.x) && int(y) == int(other.y) && int(z) == int(other.z);
+        double dx = x - other.x;
+        double dy = y - other.y;
+        double dz = z - other.z;
+
+        return (dx * dx + dy * dy + dz * dz) <= (THRESHOLD * THRESHOLD);
     }
 
     bool operator!=(const Position& other) const {

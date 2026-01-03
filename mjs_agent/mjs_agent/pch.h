@@ -6,6 +6,7 @@
 #include <mutex>
 
 #include <vector>
+#include <queue>
 #include <cmath>
 #include <cstdint>
 
