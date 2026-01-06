@@ -155,13 +155,30 @@ void PlayerManager::SetTargetRotation(Rotation& rot, Rotation::ROTATION_TYPE typ
 	targetRotationInformation_.rotation_ = rot;
 	switch (type) {
 	case Rotation::ROTATION_TYPE::YAW: {
-		while (currentPlayerInformation_.rotation_.yaw != rot.yaw) {
-			if ((currentPlayerInformation_.rotation_.yaw - rot.yaw) > 0) {
+		const double eps = 0.5;
+
+		while (true) {
+			double currentYaw = currentPlayerInformation_.rotation_.yaw;
+			double targetYaw = rot.yaw;
+
+			double dYaw = targetYaw - currentYaw;
+
+			while (dYaw <= -180.0) dYaw += 360.0;
+			while (dYaw > 180.0)  dYaw -= 360.0;
+
+			std::cout << "dYaw(shortest): " << dYaw
+				<< " (cur=" << currentYaw << ", target=" << targetYaw << ")\n";
+
+			if (std::abs(dYaw) <= eps) break;
+
+			if (dYaw > 0) {
 				inputManager_->rotate(InputManager::ROTATE_TYPE::YAW_RIGHT);
 			}
 			else {
 				inputManager_->rotate(InputManager::ROTATE_TYPE::YAW_LEFT);
 			}
+
+			std::this_thread::sleep_for(std::chrono::milliseconds(MOVE_INTERVAL_MS));
 		}
 		break;
 	}

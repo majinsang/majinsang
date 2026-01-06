@@ -32,6 +32,11 @@ int main(int argc, char* argv[]) {
 					pm.SetTargetRotation(commandHeader->targetRi_.rotation_, commandHeader->targetRi_.type_);
 					break;
 				}
+				case OPERATION::ALL: {
+					pm.SetTargetRotation(commandHeader->targetRi_.rotation_, commandHeader->targetRi_.type_);
+					pm.SetTargetPosition(commandHeader->targetPi_.position_, commandHeader->targetPi_.type_);
+					break;
+				}
 				default:
 					cerr << "Unknown operation code received." << endl;
 					break;

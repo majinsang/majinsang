@@ -77,7 +77,7 @@ class NetworkManager:
         pitch = kwargs.get('pitch', 0.0)
 
         targetPi = self.__MakePositionInformation(POSITION_TYPE.ABSOLUTE, x, y, z)
-        targetRi = self.__MakeRotationInformation(ROTATION_TYPE.NONE, yaw, pitch)
+        targetRi = self.__MakeRotationInformation(ROTATION_TYPE.YAW, yaw, pitch)
         commandHeader = self.__MakeCommandHeader(operationType, targetPi, targetRi)
 
         try:
@@ -136,7 +136,7 @@ def main():
         input("Target Position Send...")
         time.sleep(5)
         
-        if not nm.SendCommand(OPERATION_TYPE.POSITION, x=10.0, y=-60.0, z=10.0, yaw=0.0, pitch=0.0):
+        if not nm.SendCommand(OPERATION_TYPE.ROTATION, x=10.0, y=-60.0, z=10.0, yaw=-60.0, pitch=0.0):
             print("Retry AcceptConnection...")
             nm.AcceptConnection()
 

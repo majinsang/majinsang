@@ -1,6 +1,7 @@
 from dataclasses import dataclass
 import struct
 import enum
+import numpy as np
 
 class PACKET_ID(enum.IntEnum):
     PLAYER_INFORMATION = 0
@@ -17,6 +18,9 @@ class Position:
     x_: float
     y_: float
     z_: float
+
+    def ToArray(self):
+        return np.array([self.x_, self.y_, self.z_], dtype=np.float32)
 
 @dataclass
 class PositionInformation:
@@ -44,6 +48,9 @@ class Rotation:
     yaw_: float
     pitch_: float
 
+    def ToArray(self):
+        return np.array([self.yaw_, self.pitch_], dtype=np.float32)
+
 @dataclass
 class RotationInformation:
     type_ : ROTATION_TYPE
@@ -56,9 +63,10 @@ class PlayerInformation:
     rotation_ : Rotation
 
 class OPERATION_TYPE(enum.IntEnum):
-    POSITION = 0
-    ROTATION = 1
-    ALL = 2
+    NONE = 0
+    POSITION = 1
+    ROTATION = 2
+    ALL = 3
 
 @dataclass
 class CommandHeader:

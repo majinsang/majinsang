@@ -104,6 +104,7 @@ using PlayerInformationPtr = PlayerInformation*;
 
 namespace NETWORK {
     enum OPERATION : uint8_t {
+        NONE,
         POSITION,
         ROTATION,
         ALL,
