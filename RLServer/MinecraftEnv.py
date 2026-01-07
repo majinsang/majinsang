@@ -19,13 +19,21 @@ class MinecraftEnv(gym.Env):
             rotation_ = Rotation(0.0, 0.0)
         )
 
-        self.__SetTargetPosition(*targetPosition)
+        self.targetPlayerInformation_ = PlayerInformation(
+            playerId_ = 0,
+            position_ = Position(*targetPosition),
+            rotation_ = Rotation(0.0, 0.0)
+        )
 
         self.observation_space = spaces.Box(
-            low = np.array([-1000, -10000, -1000, -180, -90], dtype=np.float32),
-            high= np.array([1000, 1000, 1000, 180, 90], dtype=np.float32),
+            low = np.array([-1000, -10000, -1000, -180, -90, -180, -90], dtype=np.float32),
+            high= np.array([1000, 1000, 1000, 180, 90, 180, 90], dtype=np.float32),
             dtype=np.float32
         )
+
+        self.action_space = spaces.Discrete(8)
+
+        self.prevDist_ = None
 
         self.networkManager_ = NetworkManager('localhost')
         self.networkManager_.UdpServerOpen(8986)
@@ -39,8 +47,8 @@ class MinecraftEnv(gym.Env):
         self.__SetPlayerRotation(0, 0)
 
         self.__SendCommand(
-            *self.__GetPlayerPosition(),
-            *self.__GetPlayerRotation()
+            *self.__GetPlayerPosition().ToArray(),
+            *self.__GetPlayerRotation().ToArray()
         )
 
         self.__UpdatePlayerInformation()
@@ -96,9 +104,9 @@ class MinecraftEnv(gym.Env):
         elif action == 5: # Yaw Right
             yaw += yawStep
         elif action == 6: # Pitch Up
-            pitch += np.clip(pitch + pitchStep, -90, 90)
+            pitch = np.clip(pitch + pitchStep, -90, 90)
         elif action == 7: # Pitch Down
-            pitch -= np.clip(pitch - pitchStep, -90, 90)
+            pitch = np.clip(pitch - pitchStep, -90, 90)
 
         yaw = ((yaw + 180) % 360) - 180
 
@@ -116,9 +124,9 @@ class MinecraftEnv(gym.Env):
     def __GetObservation(self):
         relativePos = self.__GetTargetPosition().ToArray() - self.__GetPlayerPosition().ToArray()
         rot = self.__GetPlayerRotation()
-        self.__CalcRotationToTarget()
+        targetYaw, targetPitch = self.__CalcRotationToTarget()
         
-        return np.concatenate([relativePos, [rot.yaw_, rot.pitch_]]).astype(np.float32)
+        return np.concatenate([relativePos, [rot.yaw_, rot.pitch_], [targetYaw, targetPitch]]).astype(np.float32)
 
     def __UpdatePlayerInformation(self):
         self.currentPlayerInformation_ = self.networkManager_.GetPlayerInformation()
@@ -149,5 +157,3 @@ class MinecraftEnv(gym.Env):
 
     def __SendCommand(self, x, y, z, yaw, pitch):
         self.networkManager_.SendCommand(OPERATION_TYPE.ALL, x, y, z, yaw, pitch)
-
-
