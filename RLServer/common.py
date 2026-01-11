@@ -1,11 +1,12 @@
 from dataclasses import dataclass
 import struct
 import enum
+import numpy as np
 
 class PACKET_ID(enum.IntEnum):
-    PLAYER_INFORMATION = 0
-    INVENTORY_INFORMATION = 1
-    NEAR_BY_PALYER_INFORMATION = 2
+    PLAYER_INFORMATION = 0x01
+    INVENTORY_INFORMATION = 0x02
+    NEAR_BY_INFORMATION = 0x03
 
 class POSITION_TYPE(enum.IntEnum):
         NONE = 0
@@ -17,6 +18,26 @@ class Position:
     x_: float
     y_: float
     z_: float
+
+    def ToArray(self):
+        return np.array([self.x_, self.y_, self.z_], dtype=np.float32)
+
+@dataclass
+class PlayerInventory:
+    playerId_: int
+    log_: int
+    planks_: int
+    stick_: int
+    pickaxe_: int
+    crafting_table_: int
+
+@dataclass
+class PlayerNearby:
+    playerId_: int
+    near_tree_: bool
+    tree_pos_: Position
+    near_table_: bool
+    table_pos_: Position
 
 @dataclass
 class PositionInformation:
@@ -44,6 +65,9 @@ class Rotation:
     yaw_: float
     pitch_: float
 
+    def ToArray(self):
+        return np.array([self.yaw_, self.pitch_], dtype=np.float32)
+
 @dataclass
 class RotationInformation:
     type_ : ROTATION_TYPE
@@ -56,9 +80,10 @@ class PlayerInformation:
     rotation_ : Rotation
 
 class OPERATION_TYPE(enum.IntEnum):
-    POSITION = 0
-    ROTATION = 1
-    ALL = 2
+    NONE = 0
+    POSITION = 1
+    ROTATION = 2
+    ALL = 3
 
 @dataclass
 class CommandHeader:

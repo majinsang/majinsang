@@ -15,11 +15,26 @@ class NetworkManager:
         self.pluginTcpSocket_ = None
         self.addr_ = None
 
-    def __ParsePlayerData(self, data: bytes) -> tuple[str, tuple[float, float, float], tuple[float, float]]:
-        uuid = data[:8].hex()
-        x, y, z = struct.unpack('ddd', data[8:32])
-        yaw, pitch = struct.unpack('dd', data[32:48])
+    def __ParsePlayerData(self, data: bytes) -> tuple[bytes, tuple[float, float, float], tuple[float, float]]:
+        uuid = data[1:5]
+        x, y, z = struct.unpack('<ddd', data[5:29])
+        yaw, pitch = struct.unpack('<dd', data[29:45])
         return uuid, (x, y, z), (yaw, pitch)
+    
+    def __ParsePlayerInventory(self, data: bytes) -> tuple[int, int, int, int, int, int]:
+        """PACKET_ID(1) + PlayerID(4) + inventory(20) = 25 bytes"""
+        player_id, log, planks, stick, pickaxe, table = struct.unpack('<IIIIII', data[1:25])
+        return player_id, log, planks, stick, pickaxe, table
+    
+    def __ParsePlayerNearby(self, data: bytes) -> tuple[int, bool, tuple[float, float, float], bool, tuple[float, float, float]]:
+        """PACKET_ID(1) + PlayerID(4) + nearby(50) = 55 bytes"""
+        player_id = struct.unpack('<I', data[1:5])[0]
+        near_tree = bool(data[5])
+        tree_x, tree_y, tree_z = struct.unpack('<ddd', data[6:30])
+        near_table = bool(data[30])
+        table_x, table_y, table_z = struct.unpack('<ddd', data[31:55])
+        
+        return player_id, near_tree, (tree_x, tree_y, tree_z), near_table, (table_x, table_y, table_z)
     
     def UdpServerOpen(self, port):
         self.udpSocket_ = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
@@ -77,7 +92,7 @@ class NetworkManager:
         pitch = kwargs.get('pitch', 0.0)
 
         targetPi = self.__MakePositionInformation(POSITION_TYPE.ABSOLUTE, x, y, z)
-        targetRi = self.__MakeRotationInformation(ROTATION_TYPE.NONE, yaw, pitch)
+        targetRi = self.__MakeRotationInformation(ROTATION_TYPE.YAW, yaw, pitch)
         commandHeader = self.__MakeCommandHeader(operationType, targetPi, targetRi)
 
         try:
@@ -88,26 +103,125 @@ class NetworkManager:
 
         return True
 
+    def GetPackets(self) -> tuple[PlayerInformation, PlayerInventory, PlayerNearby]:
+        self.udpSocket_.setblocking(False)
+        
+        latest_player = None
+        latest_inventory = None
+        latest_nearby = None
+        
+        try:
+            while True:
+                data, _ = self.udpSocket_.recvfrom(self.RECV_DATA_BYTES)
+                packet_id = data[0]
+                
+                if packet_id == PACKET_ID.PLAYER_INFORMATION:
+                    latest_player = data
+                elif packet_id == PACKET_ID.INVENTORY_INFORMATION:
+                    latest_inventory = data
+                elif packet_id == PACKET_ID.NEAR_BY_INFORMATION:
+                    latest_nearby = data
+        except BlockingIOError:
+            pass
+        finally:
+            self.udpSocket_.setblocking(True)
+        
+        # 파싱
+        player_info = None
+        if latest_player:
+            playerId, (x, y, z), (yaw, pitch) = self.__ParsePlayerData(latest_player)
+            player_info = PlayerInformation(playerId, Position(x, y, z), Rotation(yaw, pitch))
+        
+        inventory_info = None
+        if latest_inventory:
+            player_id, log, planks, stick, pickaxe, table = self.__ParsePlayerInventory(latest_inventory)
+            inventory_info = PlayerInventory(player_id, log, planks, stick, pickaxe, table)
+        
+        nearby_info = None
+        if latest_nearby:
+            player_id, near_tree, tree_pos, near_table, table_pos = self.__ParsePlayerNearby(latest_nearby)
+            nearby_info = PlayerNearby(player_id, near_tree, Position(*tree_pos), near_table, Position(*table_pos))
+        
+        return player_info, inventory_info, nearby_info
+
     def GetPlayerInformation(self) -> PlayerInformation:
+        """PACKET_ID = 0x01: 플레이어 위치 수신"""
         self.udpSocket_.setblocking(False)
 
+        latest_data = None
         try:
             while True:
                 data, clientAddr = self.udpSocket_.recvfrom(self.RECV_DATA_BYTES)
+                if data[0] == PACKET_ID.PLAYER_INFORMATION:
+                    latest_data = data
         except BlockingIOError:
             pass
         finally:
             self.udpSocket_.setblocking(True)
 
-        data, clientAddr = self.udpSocket_.recvfrom(self.RECV_DATA_BYTES)
+        if latest_data is None:
+            data, clientAddr = self.udpSocket_.recvfrom(self.RECV_DATA_BYTES)
+        else:
+            data = latest_data
         
         playerId, (x, y, z), (yaw, pitch) = self.__ParsePlayerData(data)
         pi = PlayerInformation(playerId, Position(x, y, z), Rotation(yaw, pitch))
 
         return pi
 
+    # def GetPlayerInventory(self) -> PlayerInventory:
+    #     """PACKET_ID = 0x02: 인벤토리 정보 수신"""
+    #     self.udpSocket_.setblocking(False)
+
+    #     latest_data = None
+    #     try:
+    #         while True:
+    #             data, clientAddr = self.udpSocket_.recvfrom(self.RECV_DATA_BYTES)
+    #             if data[0] == PACKET_ID.INVENTORY_INFORMATION:
+    #                 latest_data = data
+    #     except BlockingIOError:
+    #         pass
+    #     finally:
+    #         self.udpSocket_.setblocking(True)
+
+    #     if latest_data is None:
+    #         return None
+        
+    #     player_id, log, planks, stick, pickaxe, table = self.__ParsePlayerInventory(latest_data)
+    #     return PlayerInventory(player_id, log, planks, stick, pickaxe, table)
+
+    # def GetPlayerNearby(self) -> PlayerNearby:
+    #     """PACKET_ID = 0x03: 주변 정보 수신"""
+    #     self.udpSocket_.setblocking(False)
+
+    #     latest_data = None
+    #     try:
+    #         while True:
+    #             data, clientAddr = self.udpSocket_.recvfrom(self.RECV_DATA_BYTES)
+    #             if data[0] == PACKET_ID.NEAR_BY_INFORMATION:
+    #                 latest_data = data
+    #     except BlockingIOError:
+    #         pass
+    #     finally:
+    #         self.udpSocket_.setblocking(True)
+
+    #     if latest_data is None:
+    #         return None
+        
+    #     player_id, near_tree, tree_pos, near_table, table_pos = self.__ParsePlayerNearby(latest_data)
+    #     return PlayerNearby(
+    #         player_id, 
+    #         near_tree, 
+    #         Position(*tree_pos), 
+    #         near_table, 
+    #         Position(*table_pos)
+    #     )
+
     def Close(self):
-        self.socket_.close()
+        if self.udpSocket_:
+            self.udpSocket_.close()
+        if self.agentTcpSocket_:
+            self.agentTcpSocket_.close()
 
 def udp_test():
     UDP_PORT = 8986
@@ -136,7 +250,7 @@ def main():
         input("Target Position Send...")
         time.sleep(5)
         
-        if not nm.SendCommand(OPERATION_TYPE.POSITION, x=10.0, y=-60.0, z=10.0, yaw=0.0, pitch=0.0):
+        if not nm.SendCommand(OPERATION_TYPE.ROTATION, x=10.0, y=-60.0, z=10.0, yaw=-60.0, pitch=0.0):
             print("Retry AcceptConnection...")
             nm.AcceptConnection()
 
