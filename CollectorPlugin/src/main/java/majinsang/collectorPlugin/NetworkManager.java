@@ -4,7 +4,6 @@ import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.InetAddress;
 import java.nio.ByteBuffer;
-import java.nio.charset.StandardCharsets;
 
 public class NetworkManager implements AutoCloseable {
 
@@ -17,6 +16,7 @@ public class NetworkManager implements AutoCloseable {
             this.socket = new DatagramSocket();
             this.serverAddr = InetAddress.getByName(host);
             this.serverPort = port;
+
         } catch (Exception e) {
             throw new RuntimeException("UDP init failed", e);
         }

@@ -14,7 +14,7 @@ private:
     constexpr static uint16_t SERVER_PORT = 8888;
     constexpr static uint16_t UDP_PORT = 7777;
 
-    constexpr static char SERVER_IP[] = "127.0.0.1";
+    constexpr static char SERVER_IP[] = "192.168.1.100";
 
     constexpr static uint8_t MAX_RETRY_ATTEMPTS = 5;
 	constexpr static uint32_t RETRY_DELAY_MS = 5000;
