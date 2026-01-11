@@ -104,6 +104,10 @@ void NetworkManager::RecvCurrentPlayerInformation() {
             return;
         }
 
+        /*cout << "PlayerID: " << pi.playerId_ << endl;
+        cout << "Position: (" << pi.position_.x << ", " << pi.position_.y << ", " << pi.position_.z << ")" << endl;
+		cout << "Rotation: (" << pi.rotation_.yaw << ", " << pi.rotation_.pitch << ")" << endl;*/
+
         playerManager_->SetID(pi.playerId_);
         playerManager_->SetPosition(pi.position_);
         playerManager_->SetRotation(pi.rotation_);

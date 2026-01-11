@@ -154,40 +154,115 @@ void PlayerManager::SetTargetRotation(Rotation& rot, Rotation::ROTATION_TYPE typ
 	targetRotationInformation_.type_ = type;
 	targetRotationInformation_.rotation_ = rot;
 	switch (type) {
-	case Rotation::ROTATION_TYPE::YAW: {
-		const double eps = 0.5;
+		case Rotation::ROTATION_TYPE::YAW: {
+			const double eps = 0.5;
 
-		while (true) {
-			double currentYaw = currentPlayerInformation_.rotation_.yaw;
-			double targetYaw = rot.yaw;
+			while (true) {
+				double currentYaw = currentPlayerInformation_.rotation_.yaw;
+				double targetYaw = rot.yaw;
 
-			double dYaw = targetYaw - currentYaw;
+				double dYaw = targetYaw - currentYaw;
 
-			while (dYaw <= -180.0) dYaw += 360.0;
-			while (dYaw > 180.0)  dYaw -= 360.0;
+				while (dYaw <= -180.0) dYaw += 360.0;
+				while (dYaw > 180.0)  dYaw -= 360.0;
 
-			std::cout << "dYaw(shortest): " << dYaw
-				<< " (cur=" << currentYaw << ", target=" << targetYaw << ")\n";
+				/*std::cout << "dYaw(shortest): " << dYaw
+					<< " (cur=" << currentYaw << ", target=" << targetYaw << ")\n";*/
 
-			if (std::abs(dYaw) <= eps) break;
+				if (std::abs(dYaw) <= eps) break;
 
-			if (dYaw > 0) {
-				inputManager_->rotate(InputManager::ROTATE_TYPE::YAW_RIGHT);
+				if (dYaw > 0) {
+					inputManager_->rotate(InputManager::ROTATE_TYPE::YAW_RIGHT);
+				}
+				else {
+					inputManager_->rotate(InputManager::ROTATE_TYPE::YAW_LEFT);
+				}
+
+				std::this_thread::sleep_for(std::chrono::milliseconds(MOVE_INTERVAL_MS));
 			}
-			else {
-				inputManager_->rotate(InputManager::ROTATE_TYPE::YAW_LEFT);
-			}
-
-			std::this_thread::sleep_for(std::chrono::milliseconds(MOVE_INTERVAL_MS));
+			break;
 		}
-		break;
-	}
-	case Rotation::ROTATION_TYPE::PITCH: {
+		case Rotation::ROTATION_TYPE::PITCH: {
+			while (true) {
+				double currentPitch = currentPlayerInformation_.rotation_.pitch;
+				double targetPitch = rot.pitch;
+				double dPitch = targetPitch - currentPitch;
+				/*std::cout << "dPitch: " << dPitch
+					<< " (cur=" << currentPitch << ", target=" << targetPitch << ")\n";*/
+				if (std::abs(dPitch) <= threshold) break;
+				if (dPitch > 0) {
+					inputManager_->rotate(InputManager::ROTATE_TYPE::PITCH_DOWN);
+				}
+				else {
+					inputManager_->rotate(InputManager::ROTATE_TYPE::PITCH_UP);
+				}
+				std::this_thread::sleep_for(std::chrono::milliseconds(MOVE_INTERVAL_MS));
+			}
+			break;
+		}
+		case Rotation::ROTATION_TYPE::ALL: {
+			const double epsYaw = 0.5;                 // yaw 허용 오차(도)
+			const double epsPitch = (threshold > 0.0) ? threshold : 0.5; // pitch 허용 오차(도)
 
-		break;
-	}
-	default:
-		cerr << "Unknown ROTATION_TYPE" << endl;
-		break;
-	}
+			// (선택) 안전장치: 너무 오래 걸리면 탈출
+			const int maxIter = 5000; // MOVE_INTERVAL_MS 기준으로 적당히
+			int iter = 0;
+
+			while (true) {
+				// 공유 데이터 읽기(여기서도 락 걸어주는 게 안전)
+				double currentYaw, currentPitch;
+				{
+					std::unique_lock<std::mutex> lck(mtx_);
+					currentYaw = currentPlayerInformation_.rotation_.yaw;
+					currentPitch = currentPlayerInformation_.rotation_.pitch;
+				}
+
+				double targetYaw = rot.yaw;
+				double targetPitch = rot.pitch;
+
+				// pitch 범위 clamp (MC는 보통 -90~90)
+				if (targetPitch > 90.0)  targetPitch = 90.0;
+				if (targetPitch < -90.0) targetPitch = -90.0;
+
+				// yaw 최단 회전각(-180, 180]
+				double dYaw = targetYaw - currentYaw;
+				while (dYaw <= -180.0) dYaw += 360.0;
+				while (dYaw > 180.0)  dYaw -= 360.0;
+
+				// pitch 차이
+				double dPitch = targetPitch - currentPitch;
+
+				const bool yawDone = (std::abs(dYaw) <= epsYaw);
+				const bool pitchDone = (std::abs(dPitch) <= epsPitch);
+
+				if (yawDone && pitchDone) break;
+
+				// 동시에 조작: 한 루프에서 yaw/pitch 둘 다 필요한 경우 둘 다 입력
+				if (!yawDone) {
+					if (dYaw > 0) inputManager_->rotate(InputManager::ROTATE_TYPE::YAW_RIGHT);
+					else          inputManager_->rotate(InputManager::ROTATE_TYPE::YAW_LEFT);
+				}
+
+				if (!pitchDone) {
+					// 네 구현 기준: dPitch > 0 => PITCH_DOWN
+					if (dPitch > 0) inputManager_->rotate(InputManager::ROTATE_TYPE::PITCH_DOWN);
+					else            inputManager_->rotate(InputManager::ROTATE_TYPE::PITCH_UP);
+				}
+
+				std::this_thread::sleep_for(std::chrono::milliseconds(MOVE_INTERVAL_MS));
+
+				if (++iter >= maxIter) {
+					std::cerr << "[WARN] SetTargetRotation(ALL) maxIter reached. "
+						<< "cur(yaw=" << currentYaw << ", pitch=" << currentPitch << ") "
+						<< "target(yaw=" << rot.yaw << ", pitch=" << rot.pitch << ")\n";
+					break;
+				}
+			}
+
+			break;
+		}
+		default:
+			cerr << "Unknown ROTATION_TYPE" << endl;
+			break;
+		}
 }

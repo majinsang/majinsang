@@ -77,11 +77,12 @@ class NetworkManager:
         pitch = kwargs.get('pitch', 0.0)
 
         targetPi = self.__MakePositionInformation(POSITION_TYPE.ABSOLUTE, x, y, z)
-        targetRi = self.__MakeRotationInformation(ROTATION_TYPE.YAW, yaw, pitch)
+        targetRi = self.__MakeRotationInformation(ROTATION_TYPE.ALL, yaw, pitch)
         commandHeader = self.__MakeCommandHeader(operationType, targetPi, targetRi)
 
         try:
             self.addr_[0].sendall(commandHeader.ToBytes())
+            self.addr_[0].recv(self.BOOL)
         except (BrokenPipeError, ConnectionResetError, TimeoutError):
             print("Connection closed by client")
             return False
@@ -111,32 +112,31 @@ class NetworkManager:
 
 def udp_test():
     UDP_PORT = 8986
-    TCP_PORT = 8888
 
-    nm = NetworkManager('localhost')
+    nm = NetworkManager('0.0.0.0')
     nm.UdpServerOpen(UDP_PORT)
 
     while True:
         pi = nm.GetPlayerInformation()
         print(f'Player ID: {pi.playerId_}, Position: ({pi.position_.x_}, {pi.position_.y_}, {pi.position_.z_}), Rotation: (Yaw: {pi.rotation_.yaw_}, Pitch: {pi.rotation_.pitch_})')
-
+        
 def main():
     UDP_PORT = 8986
     TCP_PORT = 8888
 
-    nm = NetworkManager('localhost')
+    nm = NetworkManager('0.0.0.0')
     nm.UdpServerOpen(UDP_PORT)
-    nm.TcpServerOpen('localhost', TCP_PORT)
+    nm.TcpServerOpen('0.0.0.0', TCP_PORT)
 
     nm.AcceptConnection()
 
     import time
-
+    
     while True:
         input("Target Position Send...")
         time.sleep(5)
         
-        if not nm.SendCommand(OPERATION_TYPE.ROTATION, x=10.0, y=-60.0, z=10.0, yaw=-60.0, pitch=0.0):
+        if not nm.SendCommand(OPERATION_TYPE.ALL, x=10.0, y=-60.0, z=10.0, yaw=-60.0, pitch=0.0):
             print("Retry AcceptConnection...")
             nm.AcceptConnection()
 

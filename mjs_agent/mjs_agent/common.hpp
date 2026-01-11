@@ -4,7 +4,8 @@ struct Rotation {
     enum ROTATION_TYPE : uint8_t {
         NONE,
         YAW,
-        PITCH
+        PITCH,
+        ALL
 	};
 
 	double yaw = 0.0;
@@ -38,7 +39,7 @@ struct Position {
         ABS
     };
 
-    static constexpr double THRESHOLD = 0.5;
+    static constexpr double THRESHOLD = 1.0;
 
     double x = 0.0;
     double y = 0.0;
@@ -47,11 +48,14 @@ struct Position {
     
 
     bool operator==(const Position& other) const {
+        //TODO
+        // y 값 나중에 살려야됨
         double dx = x - other.x;
-        double dy = y - other.y;
+        /*double dy = y - other.y;*/
         double dz = z - other.z;
 
-        return (dx * dx + dy * dy + dz * dz) <= (THRESHOLD * THRESHOLD);
+        /*return (dx * dx + dy * dy + dz * dz) <= (THRESHOLD * THRESHOLD);*/
+        return (dx * dx + dz * dz) <= (THRESHOLD * THRESHOLD);
     }
 
     bool operator!=(const Position& other) const {
