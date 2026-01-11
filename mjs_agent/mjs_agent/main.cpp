@@ -22,24 +22,50 @@ int main(int argc, char* argv[]) {
 
 			auto buf = nm.GetBuffer();
 			CommandHeaderPtr commandHeader = reinterpret_cast<CommandHeaderPtr>(buf.data());
-			
+
+			cout << "========================================" << endl;
+			cout << "Received Command Log:" << endl;
+			cout << "  OpCode: " << static_cast<int>(commandHeader->opCode_) << endl;
+			cout << "  Target Position: ("
+				<< commandHeader->targetPi_.position_.x << ", "
+				<< commandHeader->targetPi_.position_.y << ", "
+				<< commandHeader->targetPi_.position_.z << ")" << endl;
+			cout << "  Position Type: " << static_cast<int>(commandHeader->targetPi_.type_) << endl;
+			cout << "  Target Rotation: ("
+				<< commandHeader->targetRi_.rotation_.pitch << ", "
+				<< commandHeader->targetRi_.rotation_.yaw << ")" << endl;
+			cout << "  Rotation Type: " << static_cast<int>(commandHeader->targetRi_.type_) << endl;
+			cout << "  Buffer Size: " << buf.size() << " bytes" << endl;
+			cout << "========================================" << endl;
+
+
+
 			switch (commandHeader->opCode_) {
-				case OPERATION::POSITION: {
-					pm.SetTargetPosition(commandHeader->targetPi_.position_, commandHeader->targetPi_.type_);
-					break;
-				}
-				case OPERATION::ROTATION: {
-					pm.SetTargetRotation(commandHeader->targetRi_.rotation_, commandHeader->targetRi_.type_);
-					break;
-				}
-				default:
-					cerr << "Unknown operation code received." << endl;
-					break;
+			case OPERATION::POSITION: {
+				pm.SetTargetPosition(commandHeader->targetPi_.position_, commandHeader->targetPi_.type_);
+				break;
+			}
+			case OPERATION::ROTATION: {
+				pm.SetTargetRotation(commandHeader->targetRi_.rotation_, commandHeader->targetRi_.type_);
+				break;
+			}
+			case OPERATION::ALL: {
+				cout << "====SetTargetRotation====" << endl;
+				pm.SetTargetRotation(commandHeader->targetRi_.rotation_, commandHeader->targetRi_.type_);
+				cout << "====SetTargetPosition====" << endl;
+				pm.SetTargetPosition(commandHeader->targetPi_.position_, commandHeader->targetPi_.type_);
+				cout << "=========================" << endl;
+				break;
+			}
+			default:
+				cerr << "Unknown operation code received." << endl;
+				break;
 			}
 
 			nm.Signal();
 		}
-	}catch(const exception& e) {
+	}
+	catch (const exception& e) {
 		cerr << "Exception: " << e.what() << endl;
 	}
 

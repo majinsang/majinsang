@@ -4,5 +4,6 @@
 */.idea/*
 */target/*
 */__pycache__/*
-*/model/*
-!*/model/.gitkeep
+*/models/*
+!*/models/.gitkeep
+*/*_minecraft_tensorboard

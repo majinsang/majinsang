@@ -49,19 +49,19 @@ bool InputManager::move(InputManager::MOVE_TYPE type, bool keyDown) {
     switch (type) {
     case FORWARD:
         Key('W', keyDown);
-        cout << "W" << keyDown << endl;
+        /*cout << "W" << keyDown << endl;*/
         break;
     case BACKWARD:
         Key('S', keyDown);
-        cout << "S" << keyDown << endl;
+        /*cout << "S" << keyDown << endl;*/
         break;
     case LEFT:
         Key('A', keyDown);
-        cout << "A" << keyDown << endl;
+        /*cout << "A" << keyDown << endl;*/
         break;
     case RIGHT:
         Key('D', keyDown);
-        cout << "D" << keyDown << endl;
+        /*cout << "D" << keyDown << endl;*/
         break;
     default:
         cerr << "[InputManager] Somethings wrong" << endl;
@@ -81,10 +81,10 @@ void InputManager::rotate(InputManager::ROTATE_TYPE type) {
         Mouse(MOUSE_SENSITIVITY, 0);
         break;
     case PITCH_UP:
-        Mouse(0, MOUSE_SENSITIVITY);
+        Mouse(0, -MOUSE_SENSITIVITY);
         break;
     case PITCH_DOWN:
-        Mouse(0, -MOUSE_SENSITIVITY);
+        Mouse(0, MOUSE_SENSITIVITY);
         break;
     default:
         break;

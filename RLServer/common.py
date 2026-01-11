@@ -59,6 +59,7 @@ class ROTATION_TYPE(enum.IntEnum):
     NONE = 0
     YAW = 1
     PITCH = 2
+    ALL = 3
 
 @dataclass
 class Rotation:
