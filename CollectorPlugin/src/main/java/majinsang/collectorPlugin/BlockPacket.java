@@ -26,7 +26,7 @@ import java.util.UUID;
  * 
  * 총 크기: 1 + 4 + 1 + 8*3 + 1 + 8*3 = 55 bytes
  */
-class BlockPacket extends GamePacket {
+class BlockPacket {
     private static final byte PACKET_ID = 0x03;
     private static final int SEARCH_RADIUS = 32; // 탐색 반경
 

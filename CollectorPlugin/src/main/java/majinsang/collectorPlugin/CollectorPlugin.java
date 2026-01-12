@@ -27,7 +27,6 @@ public final class CollectorPlugin extends JavaPlugin {
 
     void PlayerInformationFunction() {
         for(Player player : Bukkit.getOnlinePlayers()) {
-            PlayerPacket playerPacket = new PlayerPacket(player);
             InventoryPacket inventoryPacket = new InventoryPacket(player);
             BlockPacket blockPacket = new BlockPacket(player);
                          
